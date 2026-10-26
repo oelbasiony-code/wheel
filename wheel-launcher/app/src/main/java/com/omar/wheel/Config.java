@@ -41,9 +41,6 @@ final class Config {
         new Brand("PEACOCK", new int[]{0xFFFCCC12, 0xFFF37121, 0xFFEB1F33, 0xFF6E55DC, 0xFF069DE0, 0xFF05AC3F},
                 new String[]{"peacock", "peacocktv"},
                 new String[]{"com.peacocktv.peacockandroid"}),
-        new Brand("APPLE MUSIC", new int[]{0xFFFA2D48},
-                new String[]{"applemusic"},
-                new String[]{"com.apple.android.music"}),
     };
 
     static final class Brand {
