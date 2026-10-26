@@ -3,6 +3,7 @@ package com.omar.wheel;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -67,6 +68,8 @@ public final class MainActivity extends Activity implements WheelView.Host {
     @Override
     protected void onResume() {
         super.onResume();
+        // Back on Wheel: the Home takeover is always active again.
+        HomeWatcher.pause(0);
         immersive();
         reload();
         h.removeCallbacks(weatherLoop);
@@ -184,11 +187,15 @@ public final class MainActivity extends Activity implements WheelView.Host {
     private void runShortcut(String action) {
         Intent i;
         if (AppRepo.ACTION_SETTINGS.equals(action)) {
-            // Settings may live inside Amazon's launcher, so let it stay up briefly.
-            HomeWatcher.pause(2 * 60 * 1000L);
             i = new Intent(android.provider.Settings.ACTION_SETTINGS);
+            // Only hold off the takeover if Settings is part of Amazon's launcher app.
+            ResolveInfo ri = getPackageManager().resolveActivity(i, 0);
+            if (ri != null && ri.activityInfo != null
+                    && HomeWatcher.AMAZON_LAUNCHER.equals(ri.activityInfo.packageName)) {
+                HomeWatcher.pause(60 * 1000L);
+            }
         } else {
-            HomeWatcher.pause(10 * 60 * 1000L);
+            HomeWatcher.pause(30 * 1000L);
             i = new Intent(Intent.ACTION_MAIN);
             i.addCategory(Intent.CATEGORY_HOME);
             i.setPackage(HomeWatcher.AMAZON_LAUNCHER);
