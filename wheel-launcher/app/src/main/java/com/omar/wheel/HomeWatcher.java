@@ -33,6 +33,9 @@ public final class HomeWatcher extends AccessibilityService {
     private static volatile long holdUntil;
     /** During a hold: has Amazon's home screen already appeared once? */
     private static volatile boolean holdArrived;
+    /** When it appeared. Fire OS reports the opening more than once in quick succession. */
+    private static volatile long holdArrivedAt;
+    private static final long OPENING_MS = 2000;
 
     /**
      * Opening Fire TV Settings briefly passes through Amazon's home screen.
@@ -90,8 +93,10 @@ public final class HomeWatcher extends AccessibilityService {
         if (held()) {
             if (!holdArrived) {
                 holdArrived = true; // the AMAZON HOME you asked for; let it show
+                holdArrivedAt = now;
                 return;
             }
+            if (now - holdArrivedAt < OPENING_MS) return; // repeat reports of the same opening
             releaseHold(); // Amazon's home screen reappeared (e.g. Home pressed): back to Wheel
         }
         if (now - lastJump < 800) return;
