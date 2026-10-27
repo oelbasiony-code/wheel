@@ -27,7 +27,7 @@ final class Config {
     static final int HIJRI_ADJUST_DAYS = 0;
 
     /** Try a theme early: e.g. "2026-12-25" for Christmas. null = use today's date. */
-    static final String PREVIEW_DATE = null;
+    static final String PREVIEW_DATE = "2026-10-31";
 
     /**
      * Your wheel, top to bottom. Apps are matched on the Fire Stick by their
