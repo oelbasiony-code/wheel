@@ -145,7 +145,17 @@ public final class HomeWatcher extends AccessibilityService {
 
     static void holdForAmazonHome() {
         holdArrived = false;
-        holdUntil = SystemClock.uptimeMillis() + HOLD_MAX_MS;
+        holdStartedAt = SystemClock.uptimeMillis();
+        // Lasts until the Home button is pressed or you're back on Wheel.
+        holdUntil = Long.MAX_VALUE;
+    }
+
+    private static volatile long holdStartedAt;
+
+    /** True when Home presses can be read from the log (READ_LOGS granted by the setup script). */
+    private boolean canSeeHomePresses() {
+        return checkCallingOrSelfPermission("android.permission.READ_LOGS")
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
     }
 
     static void releaseHold() {
@@ -179,13 +189,20 @@ public final class HomeWatcher extends AccessibilityService {
         }
         if (now < settingsGraceUntil) return; // passing through on the way to Settings
         if (held()) {
-            if (!holdArrived) {
-                holdArrived = true; // the AMAZON HOME you asked for; let it show
-                holdArrivedAt = now;
-                return;
+            // On AMAZON HOME, only the Home button brings you back. Amazon's screen
+            // reports changes on its own while it loads, so those are ignored.
+            if (canSeeHomePresses()) return;
+            // Fallback when Home presses can't be seen: let it open, then the next
+            // report counts as Home. Gives up holding after a minute.
+            if (now - holdStartedAt <= HOLD_MAX_MS) {
+                if (!holdArrived) {
+                    holdArrived = true; // the AMAZON HOME you asked for; let it show
+                    holdArrivedAt = now;
+                    return;
+                }
+                if (now - holdArrivedAt < OPENING_MS) return; // repeat reports of the same opening
             }
-            if (now - holdArrivedAt < OPENING_MS) return; // repeat reports of the same opening
-            releaseHold(); // Amazon's home screen reappeared: back to Wheel
+            releaseHold(); // back to Wheel
         }
         if (now - lastJump < 800) return;
         lastJump = now;
