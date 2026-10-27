@@ -34,7 +34,7 @@ final class Config {
      *   0 clear    2 partly cloudy    3 cloudy    45 fog
      *   53 drizzle    63 rain    73 snow    95 thunderstorm
      */
-    static final int PREVIEW_WEATHER = -1;
+    static final int PREVIEW_WEATHER = 95;
 
     /**
      * Your wheel, top to bottom. Apps are matched on the Fire Stick by their
