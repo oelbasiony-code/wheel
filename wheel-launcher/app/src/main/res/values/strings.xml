@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_watcher_desc">Opens Wheel whenever the Amazon home screen appears, so Wheel acts as your home screen. It only watches for Amazon\'s home screen and reads nothing else.</string>
+</resources>
