@@ -213,6 +213,7 @@ final class Messages {
         int bar = title.indexOf('|');
         if (bar < 0) return title;
         String name = title.substring(0, bar).trim();
+        if (name.equalsIgnoreCase("No Name")) name = "";   // Shortcuts' word for "not a contact"
         String rest = title.substring(bar + 1);
         int colon = rest.indexOf(':');
         String number = (colon < 0 ? rest : rest.substring(0, colon)).trim();
