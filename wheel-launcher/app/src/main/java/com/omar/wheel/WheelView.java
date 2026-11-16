@@ -549,39 +549,6 @@ final class WheelView extends View {
         return null;
     }
 
-    /**
-     * News for the boot screen's second line ("NEW MESSAGE - RAIN AT 3P"), or null on
-     * a quiet day. At most two things, most urgent first.
-     */
-    String bootNews(long now) {
-        TimeZone tz = TimeZone.getDefault();
-        java.util.ArrayList<String> bits = new java.util.ArrayList<>();
-        if (Messages.unread(getContext()) != null) {
-            bits.add(Messages.unreadIsMail(getContext()) ? "NEW MAIL" : "NEW MESSAGE");
-        }
-        long train = nextTrain(now);
-        if (train > now && train - now <= 30 * 60000L) {
-            bits.add("TRAIN IN " + ((train - now) / 60000) + " MIN");
-        }
-        if (agenda != null) {
-            for (Agenda.Event e : agenda) {
-                if (!e.allDay && e.start > now && e.start - now <= 60 * 60000L) {
-                    bits.add(e.title + " AT " + Agenda.clock(e.start, tz));
-                    break;
-                }
-            }
-        }
-        Weather.Extra x = weatherExtra;
-        if (x != null && x.wetAt > now - 3600000L && x.wetAt < now + 12 * 3600000L) {
-            String what = x.wetIsSnow ? "SNOW" : "RAIN";
-            bits.add(x.wetAt <= now + 45 * 60000L ? what + " SOON" : what + " AT " + Agenda.clock(x.wetAt, tz));
-        }
-        if (bits.isEmpty()) return null;
-        String out = bits.get(0);
-        if (bits.size() > 1) out += "  -  " + bits.get(1);
-        return DotFont.clean(out);
-    }
-
     // For the morning briefing.
     String weatherRange() {
         return weatherRange;

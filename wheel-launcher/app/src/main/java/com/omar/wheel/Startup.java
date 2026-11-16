@@ -24,8 +24,8 @@ import java.util.TimeZone;
  */
 final class Startup {
 
-    private static final long FLY_MS = 2400, HOLD_MS = 1400, SWEEP_MS = 3000;
-    private static final long BOOT_MS = FLY_MS + HOLD_MS + SWEEP_MS;
+    private static final long FLY_MS = 2400, HOLD_MS = 1400, OUT_MS = 2000, FADE_MS = 700;
+    private static final long BOOT_MS = FLY_MS + HOLD_MS + OUT_MS + FADE_MS;
     private static final long BRIEF_IN_MS = 1000, BRIEF_MS = 11000, BRIEF_OUT_MS = 1600;
     /** The day's briefing waits for the first time the TV comes on at or after this hour. */
     private static final int BRIEF_FROM_HOUR = 5;
@@ -61,7 +61,6 @@ final class Startup {
 
     static void play(boolean withBriefing) {
         bootPending = false;   // a demo replaces the automatic one
-        news = null;
         bootAt = SystemClock.uptimeMillis();
         briefAt = withBriefing ? bootAt + BOOT_MS : -1;
         pts = null;
@@ -82,7 +81,7 @@ final class Startup {
     /** True while the screen is fully covered (nothing underneath needs drawing). */
     static boolean coversAll() {
         long up = SystemClock.uptimeMillis();
-        if (bootAt >= 0 && up - bootAt < FLY_MS + HOLD_MS) return true;
+        if (bootAt >= 0 && up - bootAt < FLY_MS + HOLD_MS + OUT_MS) return true;
         return briefAt >= 0 && up - briefAt > BRIEF_IN_MS && up - briefAt < BRIEF_MS;
     }
 
@@ -122,10 +121,6 @@ final class Startup {
         if (bootAt >= 0) {
             long t = up - bootAt;
             if (t < BOOT_MS) {
-                if (newsFor != bootAt) {   // once per boot
-                    newsFor = bootAt;
-                    news = wheel.bootNews(System.currentTimeMillis());
-                }
                 drawBoot(c, dot, w, h, t, wheel);
                 return;
             }
@@ -150,15 +145,11 @@ final class Startup {
         return k * k * k * (k * (k * 6f - 15f) + 10f);
     }
 
-    private static final Paint soft = new Paint();
-
     private static int alpha(int color, float a) {
         int ca = Math.round(((color >>> 24) & 0xFF) * Math.max(0f, Math.min(1f, a)));
         return (color & 0x00FFFFFF) | (ca << 24);
     }
 
-    private static String news;   // the boot screen's second line, picked when it starts
-    private static long newsFor = -2;
 
     private static void drawBoot(Canvas c, Paint dot, float w, float h, long t, WheelView wheel) {
         String text = "WELCOME BACK, " + Config.NAME;
@@ -176,58 +167,31 @@ final class Startup {
         int cols = DotFont.cols(text);
         float x0 = (w - cols * p) / 2f, y0 = (h - 7 * p) / 2f;
 
-        // The scan line: everything right of it is still the boot screen.
-        // A soft edge (black fading in over a band) instead of a hard cut.
-        float band = w * 0.18f;
-        float edge = -band;
-        if (t > FLY_MS + HOLD_MS) edge = -band + smooth((t - FLY_MS - HOLD_MS) / (float) SWEEP_MS) * (w + band * 2);
-        dot.setColor(0xFF000000);
-        c.drawRect(Math.max(0, edge + band), 0, w, h, dot);
-        if (edge + band > 0) {
-            soft.setShader(new android.graphics.LinearGradient(edge, 0, edge + band, 0,
-                    0x00000000, 0xFF000000, android.graphics.Shader.TileMode.CLAMP));
-            c.drawRect(Math.max(0, edge), 0, Math.min(w, edge + band), h, soft);
-        }
+        // Black behind it until the dots have flown off, then it fades to the wheel.
+        long fadeAt = FLY_MS + HOLD_MS + OUT_MS;
+        float bg = t < fadeAt ? 1f : 1f - smooth((t - fadeAt) / (float) FADE_MS);
+        dot.setColor(alpha(0xFF000000, bg));
+        c.drawRect(0, 0, w, h, dot);
+        if (t >= fadeAt) return;
 
         int n = pts.length / 2;
         float r = p * 0.36f;
+        long outAt = FLY_MS + HOLD_MS;
         for (int i = 0; i < n; i++) {
             float tx = pts[2 * i], ty = pts[2 * i + 1];
-            // Staggered left to right, so the words assemble as you read them.
-            float delay = (tx / Math.max(1, cols)) * FLY_MS * 0.35f;
-            float k = smooth((t - delay) / (FLY_MS * 0.65f));
+            // Staggered left to right, so the words assemble as you read them...
+            float stagger = tx / Math.max(1, cols);
+            float k = smooth((t - stagger * FLY_MS * 0.35f) / (FLY_MS * 0.65f));
+            // ...and leave the same way they came, back to where they started.
+            if (t > outAt) {
+                k = 1f - smooth((t - outAt - stagger * OUT_MS * 0.35f) / (OUT_MS * 0.65f));
+            }
+            if (k <= 0f) continue;
             float fx = x0 + (from[2 * i] + (tx - from[2 * i]) * k) * p + p / 2;
             float fy = y0 + (from[2 * i + 1] + (ty - from[2 * i + 1]) * k) * p + p / 2;
-            float gone = (edge + band * 0.5f - fx) / (band * 0.5f);   // fades as the edge passes
-            if (gone >= 1f) continue;
             boolean landed = k >= 1f;
-            float fadeA = gone > 0f ? 1f - gone : 1f;
-            dot.setColor(alpha(landed ? CREAM : TEAL, (0.25f + 0.75f * k) * fadeA));
+            dot.setColor(alpha(landed ? CREAM : TEAL, 0.25f + 0.75f * k));
             c.drawCircle(fx, fy, landed ? r : r * 0.7f, dot);
-        }
-
-        if (news != null) {
-            // Second line: only when there's something to say. Fades in once the words land.
-            float np = p * 0.45f;
-            float nk = smooth((t - FLY_MS * 0.8f) / 600f);
-            float nx = (w - DotFont.cols(news) * np) / 2f;
-            float ny = y0 + 7 * p + p * 4 + (1f - nk) * p * 2;
-            if (nk > 0f && nx + DotFont.cols(news) * np > edge) {
-                c.save();
-                c.clipRect(Math.max(0, edge + band * 0.5f), 0, w, h);
-                DotFont.draw(c, news, nx, ny, np, np * 0.36f, dot, new int[]{TEAL}, nk);
-                c.restore();
-            }
-        }
-
-        float sx = edge + band;
-        if (sx > 0 && sx < w) {
-            // A dotted vertical line at the leading edge, brighter in the middle, like a scanner.
-            for (float y = p; y < h; y += p * 1.2f) {
-                float mid = 1f - Math.abs(y - h / 2f) / (h / 2f);
-                dot.setColor(alpha(TEAL, 0.2f + 0.6f * mid));
-                c.drawCircle(sx, y, p * 0.3f, dot);
-            }
         }
     }
 

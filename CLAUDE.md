@@ -66,10 +66,9 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   repo). Lights on/off with the TV only when the tile LIGHTS FOLLOW TV (all-apps list) is ON; off by default; opening an app
   from Wheel fades to its color (PS/Xbox tiles too), back on Wheel it goes to the home light: warm white 2700K at 60%, candlelight 2000K at 35% from 9 pm to 5 am (Config.HOME_LIGHT_*, NIGHT_*); it shifts by itself at 9 pm while you sit on Wheel.
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
-- `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, scan
-  line reveals the wheel) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first
-  event, next train, typed out). The boot adds a second line only when there's news (NEW MESSAGE, TRAIN IN 12 MIN,
-  an event within the hour, RAIN AT 3P). Any button skips. Try it: `--ez boot_demo true` (add
+- `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, hold,
+  fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first
+  event, next train, typed out). Any button skips. Try it: `--ez boot_demo true` (add
   `--ez briefing true`), or `--ez briefing_demo true`.
 
 ## Omar's setup (his Mac)
@@ -129,7 +128,7 @@ All of Omar's picks are built and on the TV: messages (texts via iPhone Shortcut
 names; BU email via Gmail forwarding to ntfy's email address), the envelope icon + MSG/MAIL
 cards, Govee (cloud API key; app colors at 100%, home light warm white by day / candlelight
 9 pm-5 am, LIGHTS FOLLOW TV tile, TV on/off from the Roku's power-mode), the startup
-sequence with its news line, the daily briefing (first TV-on at 5 am or later), the calendar
+sequence, the daily briefing (first TV-on at 5 am or later), the calendar
 countdown on the card, WORD OF DAY, centered idle mode.
 
 Ideas Omar liked but hasn't picked yet: departure warning ("LEAVE IN 8 MIN" + amber strip),
