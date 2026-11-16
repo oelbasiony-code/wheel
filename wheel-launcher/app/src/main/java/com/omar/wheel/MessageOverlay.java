@@ -27,6 +27,17 @@ final class MessageOverlay extends View {
             "#.........#",
             "###########",
     };
+    /** Texts get a chat bubble (same size as the envelope), so you can tell at a glance. */
+    private static final String[] BUBBLE = {
+            ".#########.",
+            "#.........#",
+            "#..#.#.#..#",
+            "#.........#",
+            ".#########.",
+            "...##......",
+            "..##.......",
+            ".#.........",
+    };
     private static final int CREAM = 0xFFEDE6DA, DIM = 0xFF6E6A62;
     private static final long IN_MS = 500;
 
@@ -121,24 +132,25 @@ final class MessageOverlay extends View {
         return mail ? WheelView.TICK_MAIL : WheelView.TICK_MSG;
     }
 
-    /** Draws the envelope; says whether it's still sliding in. withMenu = a small ☰ under it. */
+    /** Draws the envelope (mail) or chat bubble (text); says whether it's still sliding in. withMenu = a small ☰ under it. */
     static boolean drawIcon(Canvas c, float w, float h, boolean mail, boolean withMenu, long since,
                             Paint dot) {
         float k = Math.min(1f, (SystemClock.uptimeMillis() - since) / (float) IN_MS);
         float e = 1f - (1f - k) * (1f - k) * (1f - k);
+        String[] icon = mail ? ENVELOPE : BUBBLE;
         float p = h / 150f;
-        float ew = ENVELOPE[0].length() * p;
+        float ew = icon[0].length() * p;
         float right = w * 0.95f;
         float top = h * 0.06f - (1f - e) * p * 6;
         float x = right - ew;
         // A soft dark backing so it reads over a bright show.
         dot.setColor(Math.round(e * 0x99) << 24);
-        c.drawCircle(x + ew / 2f, top + ENVELOPE.length * p / 2f, ew * 0.85f, dot);
+        c.drawCircle(x + ew / 2f, top + icon.length * p / 2f, ew * 0.85f, dot);
         int a = Math.round(e * 255);
         dot.setColor((CREAM & 0x00FFFFFF) | (a << 24));
-        for (int r = 0; r < ENVELOPE.length; r++) {
-            for (int col = 0; col < ENVELOPE[r].length(); col++) {
-                if (ENVELOPE[r].charAt(col) != '#') continue;
+        for (int r = 0; r < icon.length; r++) {
+            for (int col = 0; col < icon[r].length(); col++) {
+                if (icon[r].charAt(col) != '#') continue;
                 c.drawCircle(x + col * p + p / 2f, top + r * p + p / 2f, p * 0.38f, dot);
             }
         }
@@ -147,7 +159,7 @@ final class MessageOverlay extends View {
         if (withMenu) {
             float hp = h / 300f;
             String m = String.valueOf(DotFont.MENU);
-            DotFont.draw(c, m, x + (ew - DotFont.cols(m) * hp) / 2f, top + ENVELOPE.length * p + p * 2,
+            DotFont.draw(c, m, x + (ew - DotFont.cols(m) * hp) / 2f, top + icon.length * p + p * 2,
                     hp, hp * 0.4f, dot, new int[]{DIM}, e);
         }
         return k < 1f;

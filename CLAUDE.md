@@ -46,7 +46,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   doesn't use the phone.
 - Texts: iPhone Shortcuts Message automations (chosen senders, plus one with "contains a space"),
   Find Contacts by Sender → Get Name, POST to the topic with header Title = [Name]|[Sender] : [Message].
-- `MessageOverlay.java`: the envelope icon (top-right, 10 s, dot teal = text, orange = mail),
+- `MessageOverlay.java`: the message icon (top-right, 10 s): chat bubble + teal dot = text, envelope + orange dot = mail,
   like a phone's notification icon. Over apps HomeWatcher shows it and catches ☰ while it shows
   (accessibility key filtering, only ☰ and Back-while-open): ☰ opens the whole message in the
   corner, ☰/Back closes it, closes itself after 30 s. No preview text beside the icon (Omar: no clutter). On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
@@ -148,10 +148,10 @@ the top.
 
 All of Omar's picks are built and on the TV: messages (texts via iPhone Shortcut with contact
 names; BU + personal Gmail forwarding to ntfy's email address), the envelope icon + MSG/MAIL
-cards, a calm sleep screen (dino, time, date, weather only; no news or card), Govee (cloud API key; app colors at 100%, home light candlelight 2200K by day / 2000K dimmer
+cards, a calm sleep screen (dino, time, date, weather only, left-aligned; no news or card), Govee (cloud API key; app colors at 100%, home light candlelight 2200K by day / 2000K dimmer
 9 pm-5 am, LIGHTS FOLLOW TV tile, TV on/off from the Roku's power-mode), the startup
 sequence, the daily briefing (first TV-on at 5 am or later), the calendar
-countdown on the card, WORD OF DAY, centered idle mode, NYT on the card, phone commands
+countdown on the card, WORD OF DAY, left-aligned idle mode, NYT on the card, phone commands
 (!home / !away / !wake / !ps5 / !xbox, all tested), the inbox (hold ☰), the train's smoke and
 whistle, no glimpse of the wheel when the TV turns on.
 

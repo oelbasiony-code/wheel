@@ -701,7 +701,7 @@ final class AmbientView extends View {
         TrainDoodle.draw(c, dot, getWidth(), bottom, pitch, t, label, alpha);
     }
 
-    /** A big clock centered on the screen, with the dino walking on top. */
+    /** A big clock on the left of the screen, with the dino walking on top. */
     private void drawIdle(Canvas c, long now, float alpha, Season.Theme theme) {
         float w = getWidth(), h = getHeight();
         TimeZone tz = TimeZone.getDefault();
@@ -720,21 +720,20 @@ final class AmbientView extends View {
         float dinoP = h / 150f;
         float iconP = h / 140f;
 
-        float clockW = DotFont.cols(time) * cp + cp * 1.5f + DotFont.cols(ap) * sp;
-        float wxW = wx == null ? 0 : DotFont.cols(wx) * dp + dp * 3 + Doodles.ICON_COLS * iconP;
         float dinoH = Doodles.DINO_ROWS * dinoP;
         float blockH = dinoH + h * 0.02f + 7 * cp + h * 0.04f + 7 * dp
                 + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP);
 
-        // Calm: just the time, date and weather, every line centered on the screen
-        // (no news ticker or card here; Omar's call).
+        // Calm: just the time, date and weather, lined up on one left edge and centered
+        // top to bottom (no news ticker or card here; Omar's call).
         float y = (h - blockH) / 2f;
+        float left = w * 0.1f;
 
-        // The clock line (digits + AM/PM) centered; the dino walks above the digits only.
-        float x = (w - clockW) / 2f;
+        // The clock line (digits + AM/PM); the dino walks above the digits only.
+        float x = left;
         float digitsW = DotFont.cols(time) * cp;
         float walk = Math.max(digitsW, Doodles.DINO_COLS * dinoP * 1.5f);
-        float walkX = x + (digitsW - walk) / 2f;
+        float walkX = x;
         Doodles.drawDino(c, dot, walkX, walkX + walk, y + dinoH, dinoP, now, alpha, theme.wear);
         y += dinoH + h * 0.02f;
 
@@ -743,16 +742,16 @@ final class AmbientView extends View {
         DotFont.draw(c, ap, cx, y + 7 * cp - 7 * sp, sp, sp * 0.38f, dot, DIM, alpha);
         y += 7 * cp + h * 0.04f;
 
-        // Date centered (the month's icon hangs off its right end, not counted).
+        // Date (the month's icon hangs off its right end).
         float dateW = DotFont.cols(date) * dp;
-        float dx = (w - dateW) / 2f;
+        float dx = left;
         DotFont.draw(c, date, dx, y, dp, dp * 0.36f, dot, CLOCK, alpha * 0.9f);
         Season.drawIcon(c, dot, theme.icon, dx + dateW + dp * 3, y + dp * 3.5f, dp * 8f, now, alpha);
         y += 7 * dp + h * 0.035f;
 
         if (wx != null) {
-            // Weather text and its animated icon, centered together.
-            float wxX = (w - wxW) / 2f;
+            // Weather text and its animated icon.
+            float wxX = left;
             float ty = y + (Doodles.ICON_ROWS * iconP - 7 * dp) / 2f;
             DotFont.draw(c, wx, wxX, ty, dp, dp * 0.36f, dot, DIM, alpha);
             Doodles.drawWeather(c, dot, wxX + DotFont.cols(wx) * dp + dp * 3, y, iconP,
