@@ -36,6 +36,11 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   Anything posted to https://ntfy.sh/TOPIC shows up. It is NOT connected to iMessage, Gmail or
   iPhone notifications (Apple blocks reading notifications). Planned feeds into the topic:
   iPhone Shortcuts automations (Message / Email triggers) and maybe a Gmail Apps Script.
+- `scripts/gmail-to-tv.gs`: Google Apps Script Omar runs in his own Google account
+  (script.google.com). Every 5 min it sends new important Gmail (sender name + subject only;
+  .edu / aamc / admissions words) to the topic and labels it "TV". The topic is pasted in by
+  Omar, never committed. His iPhone's Mail app isn't Gmail, and the iOS Message automation
+  trigger wasn't available on his phone, so this is the email route.
 - `MessageOverlay.java`: the banner over other apps (top-right, 10 s, like a phone notification).
   On Wheel the message pops up big in the middle for 10 s (any button closes it). Either way it
   stays on the card as MSG for 2 hours. Do Not Disturb (tile in the all-apps list, ☰ on Wheel):
