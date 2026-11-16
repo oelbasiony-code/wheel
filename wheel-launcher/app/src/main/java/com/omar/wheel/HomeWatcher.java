@@ -162,6 +162,62 @@ public final class HomeWatcher extends AccessibilityService {
         });
     }
 
+    private void startLogWatch() {
+        if (watching) return;
+        watching = true;
+        logThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (watching) {
+                    readLogOnce();
+                    if (!watching) break;
+                    try {
+                        Thread.sleep(3000); // logcat ended (or isn't allowed); try again later
+                    } catch (InterruptedException ie) {
+                        break;
+                    }
+                }
+            }
+        }, "wheel-homelog");
+        logThread.start();
+    }
+
+    private void readLogOnce() {
+        BufferedReader in = null;
+        try {
+            logProc = Runtime.getRuntime().exec(new String[]{
+                    "logcat", "-v", "brief", "-T", "1", "ActivityTaskManager:I", "*:S"});
+            in = new BufferedReader(new InputStreamReader(logProc.getInputStream()));
+            long started = SystemClock.uptimeMillis();
+            String line;
+            while (watching && (line = in.readLine()) != null) {
+                if (SystemClock.uptimeMillis() - started < LOG_WARMUP_MS) continue;
+                if (line.contains(HOME_PRESS_A) && line.contains(HOME_PRESS_B) && line.contains(HOME_PRESS_C)) {
+                    h.removeCallbacks(homePressed);
+                    // Let Fire OS finish handling the press, then put Wheel on top.
+                    h.postDelayed(homePressed, 150);
+                }
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "log watch stopped: " + e);
+        } finally {
+            try {
+                if (in != null) in.close();
+            } catch (Exception ignored) {
+            }
+            if (logProc != null) logProc.destroy();
+            logProc = null;
+        }
+    }
+
+    private void stopLogWatch() {
+        watching = false;
+        Process p = logProc;
+        if (p != null) p.destroy();
+        if (logThread != null) logThread.interrupt();
+        h.removeCallbacks(homePressed);
+    }
+
     // ---------------------------------------------------------------- holds
 
     static void holdForAmazonHome() {
