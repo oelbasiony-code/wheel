@@ -49,21 +49,27 @@ final class Govee {
     /** One thread, so commands reach the strip in the order they were given. */
     private static final ExecutorService q = Executors.newSingleThreadExecutor();
 
-    /** Light colors per app (the strip shows saturated colors best; not always the logo color). */
-    static int colorFor(String pkg) {
-        if (pkg == null) return 0;
-        if (pkg.startsWith("com.netflix")) return 0xE50914;
-        if (pkg.startsWith("com.disney")) return 0x1F4BFF;
-        if (pkg.startsWith("com.hulu")) return 0x1CE783;
-        if (pkg.startsWith("com.amazon.avod") || pkg.contains("primevideo")) return 0x00A8E1;
-        if (pkg.startsWith("com.peacock")) return 0xF5B800;
-        if (pkg.contains("youtube")) return 0xFF0000;   // Google's and Amazon's YouTube TV builds
-        if (pkg.startsWith("com.apple.atve")) return 0xC8D2FF;   // soft cool white
-        if (pkg.startsWith("com.wbd") || pkg.startsWith("com.hbo")) return 0x6A2CFF;
+    /**
+     * Each app its own light color (by package, or by the name on the wheel for apps like
+     * Prime Video that are built into Fire OS). Spread around the color wheel so no two look
+     * alike on the strip.
+     */
+    static int colorFor(String pkg, String label) {
+        String p = pkg == null ? "" : pkg;
+        String l = label == null ? "" : label.toUpperCase(java.util.Locale.US);
+        if (p.startsWith("com.netflix") || l.contains("NETFLIX")) return 0xFF0000;      // red
+        if (p.contains("youtube") || l.contains("YOUTUBE")) return 0xFF1A8C;            // pink
+        if (p.contains("peacock") || l.contains("PEACOCK")) return 0xFF7A00;            // orange
+        if (p.contains("tubi") || l.contains("TUBI")) return 0xFFD400;                  // yellow
+        if (p.startsWith("com.hulu") || l.contains("HULU")) return 0x7CFF00;            // lime
+        if (p.startsWith("com.disney") || l.contains("DISNEY")) return 0x00E0B0;        // teal
+        if (p.contains("avod") || p.contains("primevideo") || l.contains("PRIME")) return 0x00A8FF; // sky
+        if (p.startsWith("com.wbd") || p.startsWith("com.hbo") || l.contains("HBO")) return 0x8A2BE2; // violet
+        if (p.startsWith("com.apple.atve") || l.contains("APPLE TV")) return 0xC8D2FF;   // cool white
         return 0;
     }
 
-    static final int PLAYSTATION = 0x0070D1, XBOX = 0x107C10;
+    static final int PLAYSTATION = 0x0030FF, XBOX = 0x00C800;   // deep blue, green
     /** Brightness (1-100) while an app's color shows; Wheel's home light sets its own. */
     static final int APP_BRIGHTNESS = 100;
 
@@ -122,43 +128,64 @@ final class Govee {
         });
     }
 
-    /** An app opened: fade to its color (remembering what the strip showed before). */
+    // Govee's cloud allows about 10 commands a minute, so: nothing that's already showing is
+    // sent again, and if you hop through apps quickly only the newest request goes out.
+    private static volatile int gen;
+    private static volatile int sentRgb = -1, sentBright = -1;
+    private static volatile boolean sentHome;
+
+    /** An app opened: its color at full brightness. */
     static void tint(Context ctx, final int rgb) {
         if (rgb == 0) return;
         final Context c = ctx.getApplicationContext();
+        final int g = ++gen;
         q.execute(new Runnable() {
             @Override
             public void run() {
+                if (g != gen) return;   // something newer came in
                 try {
-                    State now = read(c);
-                    if (now == null) return;
-                    if (!now.on) return;   // lights are off: leave them off
                     SharedPreferences p = sp(c);
-                    if (!p.getBoolean(K_TINTED, false)) {
-                        p.edit().putString(K_SAVED, now.toJson()).putBoolean(K_TINTED, true).apply();
+                    if (Config.HOME_LIGHT_K <= 0 && !p.getBoolean(K_TINTED, false)) {
+                        // No home light: remember what to go back to.
+                        State now = read(c);
+                        if (now == null || !now.on) return;
+                        p.edit().putString(K_SAVED, now.toJson()).apply();
                     }
-                    fade(c, now, rgb);
-                    brightness(c, APP_BRIGHTNESS);   // apps get the strip at full brightness
+                    p.edit().putBoolean(K_TINTED, true).apply();
+                    if (sentRgb != rgb || sentHome) {
+                        color(c, rgb);
+                        sentRgb = rgb;
+                        sentHome = false;
+                    }
+                    if (sentBright != APP_BRIGHTNESS) {
+                        brightness(c, APP_BRIGHTNESS);
+                        sentBright = APP_BRIGHTNESS;
+                    }
                 } catch (Exception e) {
-                    Log.d(HomeWatcher.TAG, "govee tint: " + e);
+                    Log.w(HomeWatcher.TAG, "govee tint: " + e);
                 }
             }
         });
     }
 
+    private static void color(Context c, int rgb) throws Exception {
+        String ip = lanIp(c);
+        if (ip != null) lanColor(ip, rgb);
+        else cloud(c, "devices.capabilities.color_setting", "colorRgb", rgb);
+    }
+
     /** Back on Wheel: the home light (or, without one, what the strip showed before the app). */
     static void untint(Context ctx) {
         final Context c = ctx.getApplicationContext();
-        if (Config.HOME_LIGHT_K <= 0 && !sp(c).getBoolean(K_TINTED, false)) return;
+        final int g = ++gen;
         q.execute(new Runnable() {
             @Override
             public void run() {
+                if (g != gen) return;
                 SharedPreferences p = sp(c);
                 try {
                     if (Config.HOME_LIGHT_K > 0) {
-                        // Only send what's needed: the cloud allows a few commands a minute.
-                        State now = read(c);
-                        if (now != null && now.on && !isHome(now)) home(c);
+                        if (!sentHome || homeWasNight == null || homeWasNight != night()) home(c);
                         p.edit().putBoolean(K_TINTED, false).apply();
                         return;
                     }
@@ -167,18 +194,11 @@ final class Govee {
                     State now = read(c);
                     if (saved != null && now != null && now.on) restore(c, now, saved);
                 } catch (Exception e) {
-                    Log.d(HomeWatcher.TAG, "govee untint: " + e);
+                    Log.w(HomeWatcher.TAG, "govee untint: " + e);
                 }
                 p.edit().putBoolean(K_TINTED, false).apply();
             }
         });
-    }
-
-    private static boolean isHome(State s) {
-        boolean n = night();
-        int k = n ? Config.NIGHT_LIGHT_K : Config.HOME_LIGHT_K;
-        // Brightness isn't compared: Govee's cloud always reports 100 whatever it is.
-        return s.rgb == 0 && s.kelvin == k && homeWasNight != null && homeWasNight == n;
     }
 
     /** True from 9 pm to 5 am (Config.NIGHT_FROM_HOUR / NIGHT_UNTIL_HOUR). */
@@ -216,6 +236,9 @@ final class Govee {
         homeWasNight = n;
         int k = n ? Config.NIGHT_LIGHT_K : Config.HOME_LIGHT_K;
         int b = n ? Config.NIGHT_LIGHT_BRIGHTNESS : Config.HOME_LIGHT_BRIGHTNESS;
+        sentHome = true;
+        sentRgb = -1;
+        sentBright = b;
         try {
             String ip = lanIp(c);
             if (ip != null) {
@@ -227,7 +250,7 @@ final class Govee {
             cloud(c, "devices.capabilities.color_setting", "colorTemperatureK", k);
             cloud(c, "devices.capabilities.range", "brightness", b);
         } catch (Exception e) {
-            Log.d(HomeWatcher.TAG, "govee home: " + e);
+            Log.w(HomeWatcher.TAG, "govee home: " + e);
         }
     }
 
@@ -501,7 +524,7 @@ final class Govee {
             InputStream in = code < 400 ? con.getInputStream() : con.getErrorStream();
             String text = in == null ? "" : new Scanner(in, "UTF-8").useDelimiter("\\A").next();
             if (code >= 400) {
-                Log.d(HomeWatcher.TAG, "govee cloud " + code + ": " + text);
+                Log.w(HomeWatcher.TAG, "govee cloud " + code + ": " + text);
                 return null;
             }
             return new JSONObject(text);

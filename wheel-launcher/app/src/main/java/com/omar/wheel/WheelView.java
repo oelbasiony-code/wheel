@@ -582,8 +582,10 @@ final class WheelView extends View {
         }
     }
 
-    static final int TICK_CAL = 0xFF9ED67A, TICK_WORD = 0xFFE8C872, TICK_MSG = 0xFF5FD8C8, TICK_RAIN = 0xFF8FB8DE,
-            TICK_MAIL = 0xFFE8A87C;
+    // Card labels, each its own color (far apart, so they read apart for colorblind eyes too):
+    // calendar pink, word yellow, texts teal, mail orange, rain blue (NYT lavender: AmbientView).
+    static final int TICK_CAL = 0xFFF28CB4, TICK_WORD = 0xFFFFE066, TICK_MSG = 0xFF5FD8C8, TICK_RAIN = 0xFF8FB8DE,
+            TICK_MAIL = 0xFFFF9A57;
 
     /** Everything the rotating line cycles through right now. */
     List<Tick> tickerItems(long now) {

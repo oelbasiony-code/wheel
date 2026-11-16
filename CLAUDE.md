@@ -66,7 +66,9 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 - `Govee.java`: the H615C strip. LAN API first (finds the strip by multicast scan, or
   `--es govee_ip 'IP'`); Govee cloud key as fallback (`--es govee_key 'KEY'`, secret, not in
   repo). Lights on/off with the TV only when the tile LIGHTS FOLLOW TV (all-apps list) is ON; off by default; opening an app
-  from Wheel fades to its color (PS/Xbox tiles too), back on Wheel it goes to the home light: warm white 2700K at 60%, candlelight 2000K at 35% from 9 pm to 5 am (Config.HOME_LIGHT_*, NIGHT_*); it shifts by itself at 9 pm while you sit on Wheel.
+  from Wheel turns it that app's own color (Govee.colorFor, by package or wheel name: Netflix red,
+  YouTube pink, Peacock orange, Tubi yellow, Hulu lime, Xbox green, Disney+ teal, Prime sky, PS deep blue,
+  HBO violet, Apple TV cool white). Cloud allows ~10 commands/min: only changes are sent, stale requests dropped, back on Wheel it goes to the home light: warm white 2700K at 60%, candlelight 2000K at 35% from 9 pm to 5 am (Config.HOME_LIGHT_*, NIGHT_*); it shifts by itself at 9 pm while you sit on Wheel.
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
 - `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, hold,
   fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first

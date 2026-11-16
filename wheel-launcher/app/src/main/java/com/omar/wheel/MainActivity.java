@@ -405,7 +405,7 @@ public final class MainActivity extends Activity implements WheelView.Host {
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         try {
             startActivity(i);
-            Govee.tint(this, Govee.colorFor(e.pkg));   // lights in the app's color
+            Govee.tint(this, Govee.colorFor(e.pkg, e.label));   // lights in the app's color
         } catch (Exception ex) {
             toast("Can't open " + e.label);
         }
