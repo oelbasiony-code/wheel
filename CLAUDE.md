@@ -27,7 +27,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   /sdcard/Android/data/com.omar.wheel, so files there can't be used. Without a link the card
   says CAL NO LINK YET. The link is secret: Omar runs that command himself; never ask him for it.
 - `TrainDoodle.java`: the dot-matrix commuter rail train along the bottom, with a smoke trail.
-  Whistle (res/raw/choo.wav, made by a script, soft two-blast chord): first and last pass of the
+  Sound (res/raw/choo.wav, synthesized: steam chuffs speeding up, then a mellow sliding D6 whistle, distant): first and last pass of the
   hour and test passes (Config.TRAIN_SOUND / TRAIN_SOUND_VOLUME).
 - `News.java`: NYT headlines from the public RSS feed (no key) for the bottom ticker.
 - `Words.java`: built-in word of the day (just the word, no definition).

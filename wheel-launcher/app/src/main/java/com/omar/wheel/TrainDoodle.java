@@ -149,7 +149,7 @@ final class TrainDoodle {
         final float life = 0.17f;       // each lasts ~2.5 s
         float locoLeft = COACHES * (COACH[0].length() + GAP) * pitch;
         int newest = (int) (t / every);
-        float dr = pitch * 0.32f;
+        float dr = pitch * 0.4f;
         for (int k = newest; k >= 0 && t - k * every < life; k--) {
             float born = k * every;
             float age = (t - born) / life;               // 0..1
@@ -157,7 +157,7 @@ final class TrainDoodle {
                     - age * pitch * 3;                   // a little drift back
             float sy = top - pitch * (1f + age * 4.5f);  // rises about 4 rows
             float rad = 0.6f + age * 2.4f;               // a dot, then a soft cloud
-            float a = alpha * 0.6f * (1f - age) * (1f - age);
+            float a = alpha * 0.85f * (1f - age);
             p.setColor(Doodles.withAlpha(SMOKE, a));
             int ri = (int) Math.ceil(rad);
             for (int dy = -ri; dy <= ri; dy++) {
