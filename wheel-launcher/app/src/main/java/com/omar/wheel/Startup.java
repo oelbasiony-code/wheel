@@ -77,6 +77,13 @@ final class Startup {
         return briefAt >= 0 && up >= briefAt - 1 && up - briefAt < BRIEF_MS + BRIEF_OUT_MS;
     }
 
+    /** True while the screen is fully covered (nothing underneath needs drawing). */
+    static boolean coversAll() {
+        long up = SystemClock.uptimeMillis();
+        if (bootAt >= 0 && up - bootAt < FLY_MS + HOLD_MS) return true;
+        return briefAt >= 0 && up - briefAt > BRIEF_IN_MS && up - briefAt < BRIEF_MS;
+    }
+
     /** Any button: skip what's playing. The briefing fades out instead of cutting. */
     static void skip() {
         long up = SystemClock.uptimeMillis();

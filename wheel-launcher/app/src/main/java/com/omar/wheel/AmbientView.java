@@ -380,6 +380,14 @@ final class AmbientView extends View {
             waking = false;
         }
 
+        // Startup covering the whole screen: draw only that (keeps it smooth on the stick).
+        if (Startup.coversAll()) {
+            lastInput = up;
+            wheel.setCovered(true);
+            Startup.draw(c, dot, getWidth(), getHeight(), wheel);
+            return;
+        }
+
         boolean wantIdle = Config.IDLE_MINUTES > 0 && up - lastInput > IDLE_AFTER_MS;
         if (waking || !wantIdle) {
             idle = Math.max(0f, idle - dt * FADE_OUT_PER_MS);

@@ -80,7 +80,7 @@ final class Govee {
     }
 
     static boolean followTv(Context c) {
-        return sp(c).getBoolean(K_FOLLOW, true);
+        return sp(c).getBoolean(K_FOLLOW, false);   // off until you turn it on
     }
 
     static void setFollowTv(Context c, boolean on) {

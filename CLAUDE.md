@@ -58,7 +58,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   Also watches screen on/off (the stick sleeps when the TV turns off) for Govee and Startup.
 - `Govee.java`: the H615C strip. LAN API first (finds the strip by multicast scan, or
   `--es govee_ip 'IP'`); Govee cloud key as fallback (`--es govee_key 'KEY'`, secret, not in
-  repo). Lights on/off with the TV (tile LIGHTS FOLLOW TV in the all-apps list); opening an app
+  repo). Lights on/off with the TV only when the tile LIGHTS FOLLOW TV (all-apps list) is ON; off by default; opening an app
   from Wheel fades to its color (PS/Xbox tiles too), back on Wheel it fades back to what it was.
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
 - `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, scan
