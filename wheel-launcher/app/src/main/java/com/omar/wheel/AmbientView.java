@@ -597,7 +597,7 @@ final class AmbientView extends View {
         float wxW = wx == null ? 0 : DotFont.cols(wx) * dp + dp * 3 + Doodles.ICON_COLS * iconP;
         java.util.List<WheelView.Tick> ticks = wheel.tickerItems(now);
         float calP = h / 170f;
-        float calH = ticks.isEmpty() ? 0 : h * 0.045f + 7 * calP;
+        float calH = ticks.isEmpty() ? 0 : 7 * calP + 2 * WheelView.TICK_PAD_ROWS * calP + h * 0.04f;
         float dinoH = Doodles.DINO_ROWS * dinoP;
         float blockH = dinoH + h * 0.02f + 7 * cp + h * 0.04f + 7 * dp
                 + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP) + calH;
@@ -620,6 +620,14 @@ final class AmbientView extends View {
         DotFont.draw(c, ap, cx, y + 7 * cp - 7 * sp, sp, sp * 0.38f, dot, DIM, alpha);
         y += 7 * cp + h * 0.04f;
 
+        if (!ticks.isEmpty()) {
+            // The rotating line right under the time, in its card, as wide as the clock.
+            float cardW = Math.max(clockW, w * 0.4f);
+            float pad = WheelView.TICK_PAD_ROWS * calP;
+            drawTicker(c, ticks, now, (w - cardW) / 2f, y + pad, calP, cardW, alpha);
+            y += 7 * calP + 2 * pad + h * 0.04f;
+        }
+
         // Date centered (the month's icon hangs off its right end, not counted).
         float dateW = DotFont.cols(date) * dp;
         float dx = (w - dateW) / 2f;
@@ -635,11 +643,6 @@ final class AmbientView extends View {
             Doodles.drawWeather(c, dot, wxX + DotFont.cols(wx) * dp + dp * 3, y, iconP,
                     wheel.weatherCode(), wheel.weatherDay(), now, alpha);
             y += Doodles.ICON_ROWS * iconP;
-        }
-        if (!ticks.isEmpty()) {
-            // The rotating line under the weather, in its card, centered as wide as the clock.
-            float cardW = Math.max(clockW, w * 0.4f);
-            drawTicker(c, ticks, now, (w - cardW) / 2f, y + h * 0.045f, calP, cardW, alpha);
         }
     }
 }

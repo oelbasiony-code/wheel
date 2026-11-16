@@ -36,8 +36,10 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   Anything posted to https://ntfy.sh/TOPIC shows up. It is NOT connected to iMessage, Gmail or
   iPhone notifications (Apple blocks reading notifications). Planned feeds into the topic:
   iPhone Shortcuts automations (Message / Email triggers) and maybe a Gmail Apps Script.
-- Email: BU Gmail forwards to ntfy's email address for the topic (ntfy-TOPIC@ntfy.sh, NOT in the
-  repo): subject = title, body = message. Messages.tidy() keeps the first lines and drops the
+- Email: ntfy's email address for the topic (ntfy-TOPIC@ntfy.sh, NOT in the repo) drops the
+  sender, so `scripts/gmail-to-tv.gs` (Apps Script in the BU account, every minute) emails it
+  "Sender Name: Subject" with body "--\nwheel" (shows as MAIL, title only). Gmail forwarding
+  to that address should be OFF once the script runs (else doubles). subject = title, body = message. Messages.tidy() keeps the first lines and drops the
   sign-off/signature. The iPhone Email trigger never fired, so email doesn't use the phone.
 - Feeding the topic is done on Omar's iPhone with Shortcuts automations (Message trigger for
   chosen people; Email trigger on his Gmail account, which he adds to Apple's Mail app; both
@@ -126,7 +128,7 @@ the top.
 
 All of Omar's picks are built and on the TV: messages (texts via iPhone Shortcut with contact
 names; BU email via Gmail forwarding to ntfy's email address), the envelope icon + MSG/MAIL
-cards, Govee (cloud API key; app colors at 100%, home light warm white by day / candlelight
+cards (sleep screen: card right under the clock), Govee (cloud API key; app colors at 100%, home light warm white by day / candlelight
 9 pm-5 am, LIGHTS FOLLOW TV tile, TV on/off from the Roku's power-mode), the startup
 sequence, the daily briefing (first TV-on at 5 am or later), the calendar
 countdown on the card, WORD OF DAY, centered idle mode.
