@@ -96,6 +96,16 @@ final class TrainDoodle {
         }
     }
 
+    /** Where the train is now: {left, right} in px, for clearing the news ticker around it. */
+    static float[] span(float t, float w, float pitch) {
+        float len = COLS * pitch;
+        float x = trainX(t, w, len, pitch);
+        return new float[]{x, x + len};
+    }
+
+    /** Rows down from the train's top to the middle of its body (to line it up with the ticker). */
+    static final float BODY_MID_ROWS = 4.5f;
+
     /** Left edge of the train: comes in from off the left, leaves off the right, snapped to the dots. */
     private static float trainX(float t, float w, float len, float pitch) {
         float x = -len + (w + len) * t;

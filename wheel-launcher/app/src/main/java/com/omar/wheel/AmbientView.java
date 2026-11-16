@@ -326,74 +326,115 @@ final class AmbientView extends View {
         }
 
         // The bottom of the screen is shared: the NYT ticker always runs there (dimmer on
-        // the main screen so it doesn't pull your eye from the wheel), and a train rides
-        // on top of it like rails. Never at the top.
-        float trackY = h * 0.985f;    // no headlines yet: the train runs along the bottom
+        // the main screen so it doesn't pull your eye from the wheel). When a train is due it
+        // runs right through the ticker line: the headlines fade out ahead of it and fade
+        // back in behind it. Never at the top.
+        float tp = h / 190f;                         // train dot pitch
+        float t = trainProgress(now);
+        float trackY = h * 0.985f;                   // no headlines yet: along the very bottom
         if (news != null && !news.isEmpty()) {
             float np = h / 170f;
             float newsTop = h * 0.955f - 7 * np;
-            drawNews(c, up, newsTop, np, normal * NEWS_MAIN_BRIGHTNESS + idle * IDLE_BRIGHTNESS);
-            trackY = newsTop - np * 1.6f;
+            float gapL = 0, gapR = 0;
+            if (t >= 0) {
+                float[] sp = TrainDoodle.span(t, getWidth(), tp);
+                gapL = sp[0] - np * 3;
+                gapR = sp[1] + np * 3;
+            }
+            drawNews(c, up, newsTop, np, normal * NEWS_MAIN_BRIGHTNESS + idle * IDLE_BRIGHTNESS, gapL, gapR);
+            // Train body centered on the headline text.
+            trackY = newsTop + 3.5f * np - TrainDoodle.BODY_MID_ROWS * tp + TrainDoodle.ROWS * tp;
         }
-        drawTrain(c, now, trackY, normal + idle * IDLE_BRIGHTNESS);
+        if (t >= 0) drawTrain(c, now, t, trackY, tp, normal + idle * IDLE_BRIGHTNESS);
     }
 
-    /** NYT headlines scrolling right to left, "NYT" fixed on the left, a dot between headlines. */
-    private void drawNews(Canvas c, long up, float top, float p, float alpha) {
+    /**
+     * The NYT ticker. gapL..gapR (px) is where the train is: nothing drawn there, and the
+     * headlines fade out over a short stretch on each side of it. gapR <= gapL: no train.
+     */
+    private void drawNews(Canvas c, long up, float top, float p, float alpha, float gapL, float gapR) {
+        float w = getWidth();
+        if (gapR <= gapL) {
+            newsLayer(c, up, top, p, alpha, 0, w);
+            return;
+        }
+        final float fade = p * 24f;
+        final int steps = 8;
+        float sw = fade / steps;
+        newsLayer(c, up, top, p, alpha, 0, gapL - fade);
+        for (int i = 0; i < steps; i++) {
+            // Dimmer step by step toward the train, then brighter step by step behind it.
+            newsLayer(c, up, top, p, alpha * (1f - (i + 1f) / (steps + 1)),
+                    gapL - fade + i * sw, gapL - fade + (i + 1) * sw);
+            newsLayer(c, up, top, p, alpha * ((i + 1f) / (steps + 1)),
+                    gapR + i * sw, gapR + (i + 1) * sw);
+        }
+        newsLayer(c, up, top, p, alpha, gapR + fade, w);
+    }
+
+    /** One vertical slice (l..r px) of the ticker: "NYT", the little bar, scrolling headlines. */
+    private void newsLayer(Canvas c, long up, float top, float p, float alpha, float l, float r) {
+        if (r <= l || alpha <= 0.01f) return;
         java.util.List<String> items = news;
         float w = getWidth();
         float left = w * 0.04f, right = w * 0.96f;
-        float lw = DotFont.draw(c, "NYT", left, top, p, p * 0.36f, dot, NYT_LABEL, alpha);
-        // A short faint bar between the label and the moving text.
-        dot.setColor(Doodles.withAlpha(CARD, alpha));
-        for (int i = 0; i < 7; i++) c.drawCircle(left + lw + p * 4f, top + i * p + p / 2f, p * 0.3f, dot);
-        float x0 = left + lw + p * 8f;
-
-        // One loop = every headline plus a separator after each.
-        float sep = p * 8f;
-        float total = 0;
-        for (String s : items) total += DotFont.cols(s) * p + sep;
-        if (total <= 0) return;
-        float offset = (up * NEWS_DOTS_PER_SEC * p / 1000f) % total;
-
         c.save();
-        c.clipRect(x0, top - p, right, top + 8 * p);
-        float x = x0 - offset;
-        // Draw the loop twice back to back so it never runs out mid-screen.
-        for (int pass = 0; pass < 2 && x < right; pass++) {
-            for (String s : items) {
-                float sw = DotFont.cols(s) * p;
-                if (x + sw >= x0 && x <= right) {
-                    DotFont.draw(c, s, x, top, p, p * 0.36f, dot, DIM, alpha, x0, right);
+        c.clipRect(l, top - p, r, top + 8 * p);
+        float lw = DotFont.draw(c, "NYT", left, top, p, p * 0.36f, dot, NYT_LABEL, alpha, l - p, r);
+        // A short faint bar between the label and the moving text.
+        float bx = left + lw + p * 4f;
+        if (bx >= l - p && bx <= r + p) {
+            dot.setColor(Doodles.withAlpha(CARD, alpha));
+            for (int i = 0; i < 7; i++) c.drawCircle(bx, top + i * p + p / 2f, p * 0.3f, dot);
+        }
+        float x0 = left + lw + p * 8f;
+        float lo = Math.max(x0, l), hi = Math.min(right, r);
+        if (hi > lo) {
+            // One loop = every headline plus a separator after each.
+            float sep = p * 8f;
+            float total = 0;
+            for (String s : items) total += DotFont.cols(s) * p + sep;
+            if (total > 0) {
+                float offset = (up * NEWS_DOTS_PER_SEC * p / 1000f) % total;
+                c.clipRect(x0, top - p, right, top + 8 * p);
+                float x = x0 - offset;
+                // The loop twice back to back so it never runs out mid-screen.
+                for (int pass = 0; pass < 2 && x < hi; pass++) {
+                    for (String s : items) {
+                        float sw = DotFont.cols(s) * p;
+                        if (x + sw >= lo && x <= hi) {
+                            DotFont.draw(c, s, x, top, p, p * 0.36f, dot, DIM, alpha, lo - p, hi);
+                        }
+                        x += sw;
+                        float dx = x + sep / 2f;
+                        if (dx >= lo && dx <= hi) {
+                            dot.setColor(Doodles.withAlpha(0xFFC583BC, alpha));
+                            c.drawCircle(dx, top + 3.5f * p, p * 0.55f, dot);
+                        }
+                        x += sep;
+                        if (x > hi) break;
+                    }
                 }
-                x += sw;
-                float dx = x + sep / 2f;
-                if (dx >= x0 && dx <= right) {
-                    dot.setColor(Doodles.withAlpha(0xFFC583BC, alpha));
-                    c.drawCircle(dx, top + 3.5f * p, p * 0.55f, dot);
-                }
-                x += sep;
-                if (x > right) break;
             }
         }
         c.restore();
     }
 
-    /** The commuter rail train along the bottom, in the half hour before it leaves. */
-    private void drawTrain(Canvas c, long now, float bottom, float alpha) {
-        if (!Config.TRAIN) return;
-        long dep = wheel.nextTrain(now);
-        float t;
+    /** How far along a train pass is right now (0..1), or -1 if no train is on screen. */
+    private float trainProgress(long now) {
+        if (!Config.TRAIN) return -1;
         if (demoTrain > 0) {
-            t = (now - demoTrain) / (float) TrainDoodle.PASS_MS;
-            if (t >= 1f) {
-                demoTrain = 0;
-                return;
-            }
-        } else {
-            t = TrainDoodle.progress(now, dep);
+            float t = (now - demoTrain) / (float) TrainDoodle.PASS_MS;
+            if (t < 1f) return t;
+            demoTrain = 0;
+            return -1;
         }
-        if (t < 0) return;
+        return TrainDoodle.progress(now, wheel.nextTrain(now));
+    }
+
+    /** The commuter rail train, with "NEXT TRAIN TO BOSTON 4:58 AM" above it. */
+    private void drawTrain(Canvas c, long now, float t, float bottom, float pitch, float alpha) {
+        long dep = wheel.nextTrain(now);
         String label = "NEXT TRAIN TO " + Config.TRAIN_TO;
         if (dep > 0) {
             TimeZone tz = TimeZone.getDefault();
@@ -402,8 +443,7 @@ final class AmbientView extends View {
             Date d = new Date(dep);
             label += "  " + hm.format(d) + " " + ampm.format(d).toUpperCase(Locale.US);
         }
-        float h = getHeight();
-        TrainDoodle.draw(c, dot, getWidth(), bottom, h / 190f, t, label, alpha);
+        TrainDoodle.draw(c, dot, getWidth(), bottom, pitch, t, label, alpha);
     }
 
     /** A big clock centered on the screen, with the dino walking on top. */

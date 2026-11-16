@@ -573,7 +573,7 @@ final class WheelView extends View {
 
     /**
      * Why the calendar has nothing to show, said on the card instead of staying blank:
-     * NO LINK YET, CAN'T LOAD CALENDAR, NOTHING IN THE NEXT 2 WEEKS. null = all good.
+     * NO LINK YET, CAN'T LOAD, NOTHING IN 2 WEEKS. null = all good.
      */
     void setCalendarNote(String note) {
         calendarNote = note;
