@@ -92,7 +92,7 @@ final class TrainDoodle {
             float lp = pitch * 0.55f;
             float lw = DotFont.cols(label) * lp;
             float lx = x + (len - lw) / 2f;
-            float ly = top - pitch * 8.5f - 7 * lp;   // above the smoke
+            float ly = top - pitch * 3.5f - 7 * lp;   // just above the roof (the smoke can drift over it)
             DotFont.draw(c, label, lx, ly, lp, lp * 0.38f, p, new int[]{STRIPE}, alpha);
         }
     }
