@@ -153,7 +153,9 @@ final class Messages {
                 if (!"message".equals(o.optString("event"))) continue;
                 String text = o.optString("message", "").trim();
                 String title = o.optString("title", "").trim();
-                if (!title.isEmpty()) text = title + ": " + text;
+                // ntfy fills in "triggered" when the phone sent an empty body.
+                if (text.equalsIgnoreCase("triggered")) text = "";
+                if (!title.isEmpty()) text = text.isEmpty() ? title : title + ": " + text;
                 final String clean = DotFont.clean(text);
                 p.edit().putString(K_LAST_ID, o.optString("id", since))
                         .putString(K_TEXT, clean)

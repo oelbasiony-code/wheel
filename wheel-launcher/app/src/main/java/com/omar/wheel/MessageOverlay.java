@@ -11,8 +11,8 @@ import java.util.List;
 
 /**
  * What a message looks like over another app (Netflix, a game...): a small dot-matrix
- * card in the top-right corner, like a phone notification. It slides in, stays a few
- * seconds (HomeWatcher removes it), and stays on Wheel's card afterwards.
+ * card in the top-right corner, like a phone notification. It slides in, stays 5 seconds
+ * (HomeWatcher removes it), and stays on Wheel's card afterwards.
  */
 final class MessageOverlay extends View {
 
@@ -38,10 +38,18 @@ final class MessageOverlay extends View {
     @Override
     protected void onDraw(Canvas c) {
         if (text == null) return;
-        float w = getWidth(), h = getHeight();
+        if (!drawBanner(c, getWidth(), getHeight(), text, null, since, dot, box)) return;
+        postInvalidateOnAnimation();
+    }
+
+    /**
+     * Draws the banner (top-right card) and says whether it's still sliding in.
+     * Wheel draws the same banner itself, with a hint line ("PLAY OPENS") under the label.
+     */
+    static boolean drawBanner(Canvas c, float w, float h, String text, String hint, long since,
+                              Paint dot, RectF box) {
         float k = Math.min(1f, (SystemClock.uptimeMillis() - since) / (float) IN_MS);
         float e = 1f - (1f - k) * (1f - k) * (1f - k);   // ease out
-        if (k < 1f) postInvalidateOnAnimation();
 
         float p = h / 220f;
         float cardW = w * 0.36f;
@@ -73,10 +81,17 @@ final class MessageOverlay extends View {
         float y = top + pad;
         DotFont.draw(c, "MESSAGE", x + pad, y, labelP, labelP * 0.36f, dot,
                 new int[]{WheelView.TICK_MSG}, e);
+        if (hint != null) {
+            // Dim, on the right of the label row.
+            float hw = DotFont.cols(hint) * labelP;
+            DotFont.draw(c, hint, right - pad - hw, y, labelP, labelP * 0.36f, dot,
+                    new int[]{0xFF6E6A62}, e);
+        }
         y += 7 * labelP + p * 4;
         for (String line : lines) {
             DotFont.draw(c, line, x + pad, y, p, p * 0.36f, dot, new int[]{CREAM}, e);
             y += lineH;
         }
+        return k < 1f;
     }
 }

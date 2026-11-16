@@ -40,10 +40,12 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   chosen people; Email trigger on his Gmail account, which he adds to Apple's Mail app; both
   POST sender + text/subject to the topic). A Google Apps Script route was tried and dropped:
   Google's script servers get "Address unavailable" from ntfy.sh.
-- `MessageOverlay.java`: the banner over other apps (top-right, 10 s, like a phone notification).
-  On Wheel the message pops up big in the middle for 10 s (any button closes it). Either way it
-  stays on the card as MSG for 2 hours. Do Not Disturb (tile in the all-apps list, ☰ on Wheel):
-  no banners over shows; the message pops up when you're back on Wheel.
+- `MessageOverlay.java`: the banner (top-right, 5 s, like a phone notification). Over other
+  apps HomeWatcher adds it as an overlay; on Wheel, AmbientView draws the same banner (with
+  "PLAY OPENS"). It stays on the card as MSG for 2 hours. Play/Pause on Wheel opens the last
+  message big in the middle; Play/Pause, Back or any button closes it. Do Not Disturb (tile in
+  the all-apps list, ☰ on Wheel): no banners over shows; the banner shows when you're back on Wheel.
+  An empty body arrives from ntfy as "triggered"; Wheel then shows just the title.
   Don't rely on catching remote keys in HomeWatcher: on this stick key filtering didn't reach
   the service reliably, and Back always reaches the app anyway.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.

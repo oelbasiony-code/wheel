@@ -98,12 +98,12 @@ public final class HomeWatcher extends AccessibilityService {
     private static volatile HomeWatcher instance;
     private MessageOverlay overlay;
     /** Like a phone notification: the banner shows this long, then goes away. */
-    private static final long BANNER_MS = 10 * 1000L;
+    private static final long BANNER_MS = 5 * 1000L;
 
     private final Messages.Listener onMessage = new Messages.Listener() {
         @Override
         public void onMessage(String text) {
-            // On Wheel it pops up big there instead. Do Not Disturb: it waits for Wheel.
+            // On Wheel, Wheel draws the banner itself. Do Not Disturb: it waits for Wheel.
             if (MainActivity.onScreen || Messages.dnd(HomeWatcher.this)) return;
             showOverlay(text);
         }

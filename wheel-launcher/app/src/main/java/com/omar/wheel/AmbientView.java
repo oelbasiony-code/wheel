@@ -130,17 +130,34 @@ final class AmbientView extends View {
         invalidate();
     }
 
-    // A message on Wheel: a big card in the middle for 10 seconds (any button closes it sooner).
-    private static final long MESSAGE_FOR_MS = 10 * 1000L;
+    // A message on Wheel: the same small banner as over other apps (top right, 5 seconds,
+    // doesn't take the remote). Play/Pause opens it big in the middle; it stays open
+    // until you close it (Play/Pause, Back or any button).
+    private static final long BANNER_FOR_MS = 5 * 1000L;
     private static final long MESSAGE_IN_MS = 400;
-    private String message;
+    private final android.graphics.RectF bannerBox = new android.graphics.RectF();
+    private String banner;
+    private long bannerSince;      // uptime, like MessageOverlay
+    private String message;        // opened big
     private long messageSince;
 
     void showMessage(String text) {
         if (text == null || text.isEmpty()) return;
+        banner = text;
+        bannerSince = android.os.SystemClock.uptimeMillis();
+        poke();          // wakes idle mode so you see it
+        holdIdle = false;
+        Messages.markRead(getContext());   // seen; still on the card for a while
+        invalidate();
+    }
+
+    /** Opens the message big in the middle (it stays until closed). */
+    void openMessage(String text) {
+        if (text == null || text.isEmpty()) return;
+        banner = null;
         message = text;
         messageSince = System.currentTimeMillis();
-        poke();          // wakes idle mode so you see it
+        poke();
         holdIdle = false;
         invalidate();
     }
@@ -154,13 +171,17 @@ final class AmbientView extends View {
         invalidate();
     }
 
-    private void drawMessage(Canvas c, long now) {
-        long t = now - messageSince;
-        if (t > MESSAGE_FOR_MS) {
-            message = null;
-            Messages.markRead(getContext());   // still on the card for a while
+    private void drawBanner(Canvas c) {
+        if (android.os.SystemClock.uptimeMillis() - bannerSince > BANNER_FOR_MS) {
+            banner = null;
             return;
         }
+        MessageOverlay.drawBanner(c, getWidth(), getHeight(), banner, "PLAY OPENS",
+                bannerSince, dot, bannerBox);
+    }
+
+    private void drawMessage(Canvas c, long now) {
+        long t = now - messageSince;
         float w = getWidth(), h = getHeight();
         float k = Math.min(1f, t / (float) MESSAGE_IN_MS);
         float e = 1f - (1f - k) * (1f - k) * (1f - k);
@@ -171,7 +192,7 @@ final class AmbientView extends View {
         float cardW = w * 0.56f;
         float pad = p * 5;
         int maxCols = (int) ((cardW - 2 * pad) / p);
-        java.util.List<String> lines = DotFont.wrap(message, maxCols, 5);
+        java.util.List<String> lines = DotFont.wrap(message, maxCols, 7);
         float lineH = 11 * p;
         float labelP = p * 0.6f;
         float cardH = pad + 7 * labelP + p * 5 + (lines.size() - 1) * lineH + 7 * p + pad;
@@ -185,6 +206,9 @@ final class AmbientView extends View {
         float ty = y + pad;
         DotFont.draw(c, "MESSAGE", x + pad, ty, labelP, labelP * 0.36f, dot,
                 new int[]{WheelView.TICK_MSG}, e);
+        String hint = "BACK CLOSES";
+        DotFont.draw(c, hint, x + cardW - pad - DotFont.cols(hint) * labelP, ty, labelP,
+                labelP * 0.36f, dot, new int[]{0xFF6E6A62}, e);
         ty += 7 * labelP + p * 5;
         for (String line : lines) {
             DotFont.draw(c, line, x + pad, ty, p, p * 0.36f, dot, CLOCK, e);
@@ -409,6 +433,7 @@ final class AmbientView extends View {
         }
         if (t >= 0) drawTrain(c, now, t, trackY, tp, normal + idle * IDLE_BRIGHTNESS);
         if (message != null) drawMessage(c, now);
+        else if (banner != null) drawBanner(c);
     }
 
     /**

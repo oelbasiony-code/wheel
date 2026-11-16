@@ -191,7 +191,7 @@ public final class MainActivity extends Activity implements WheelView.Host {
         Messages.start(this);
         Messages.addListener(onMessage);
         String unread = Messages.unread(this);
-        if (unread != null) ambient.showMessage(unread);
+        if (unread != null) ambient.showMessage(unread);   // the banner, 5 s
     }
 
     /** True while Wheel is the app on screen (HomeWatcher then leaves messages to it). */
@@ -253,7 +253,23 @@ public final class MainActivity extends Activity implements WheelView.Host {
     public boolean dispatchKeyEvent(KeyEvent e) {
         int act = e.getAction();
         boolean down = act == KeyEvent.ACTION_DOWN;
-        // A message on screen: any button closes it (and does nothing else).
+        // Play/Pause opens the last message big (it's on the card for 2 hours) and closes it.
+        int code = e.getKeyCode();
+        if (code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || code == KeyEvent.KEYCODE_MEDIA_PLAY
+                || code == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+            if (act == KeyEvent.ACTION_UP) {
+                if (ambient.messageShowing()) {
+                    ambient.dismissMessage();
+                } else {
+                    String last = Messages.recent(this, System.currentTimeMillis());
+                    if (last != null) ambient.openMessage(last);
+                    else toast("No messages");
+                }
+                swallowKey = -1;
+            }
+            return true;
+        }
+        // An opened message: any button closes it (and does nothing else).
         if (ambient.messageShowing() && e.getKeyCode() != swallowKey) {
             if (act == KeyEvent.ACTION_DOWN) swallowKey = e.getKeyCode();
             ambient.poke();
