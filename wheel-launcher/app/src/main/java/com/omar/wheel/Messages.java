@@ -197,8 +197,9 @@ final class Messages {
                     Commands.run(c, cmd.substring(1).trim().toLowerCase(java.util.Locale.US));
                     continue;
                 }
-                // Emails arrive with line breaks (a body); texts from the phone don't.
-                final boolean mail = raw.indexOf('\n') >= 0;
+                // Emails always have a body; texts from the phone don't (all in the title).
+                String body = raw.trim();
+                final boolean mail = !body.isEmpty() && !body.equalsIgnoreCase("triggered");
                 String text = tidy(raw);
                 String title = nameOrNumber(o.optString("title", "").trim());
                 // ntfy fills in "triggered" when the phone sent an empty body.

@@ -52,7 +52,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   there, so it stays unread). On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
   the middle; ☰, Back or any button closes. Play/Pause opens the newest any time. Texts show on
   the card as MSG, emails as MAIL, for 5 minutes or until opened; then MSG says NO NEW MESSAGES and MAIL says NO NEW
-  MAIL (both always on the card). Play/Pause still opens the newest for 2 hours. An email = a body with line breaks.
+  MAIL (both always on the card). Play/Pause still opens the newest for 2 hours. An email = anything with a body (phone texts send only a title).
   Do Not Disturb (tile in the all-apps list): no icon over shows; it shows when you're back on Wheel.
   An empty body arrives from ntfy as "triggered"; Wheel then shows just the title. The same text twice within 30 s shows once (two phone automations: chosen senders + "contains a space").
   Don't rely on catching remote keys in HomeWatcher: on this stick key filtering didn't reach
