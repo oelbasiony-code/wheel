@@ -56,7 +56,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   Don't rely on catching remote keys in HomeWatcher: on this stick key filtering didn't reach
   the service reliably, and Back always reaches the app anyway.
 - `Commands.java`: phone commands on the same topic, starting with "!" (never shown):
-  !home (strip on, TV on to the Fire Stick via Roku PowerOn + InputHDMI4, WELCOME HOME briefing),
+  !home (strip on, TV on to the Fire Stick via Roku PowerOn + InputHDMI4, WELCOME HOME briefing that stays until a button),
   !away (strip off; TV off only if it's just showing Wheel), !wake (before noon: TV on, boot +
   briefing even if already shown), !ps5 / !xbox (TV on, input, strip color). Try one:
   `--es command home`. Each is a one-action iPhone Shortcut/automation (Get Contents of URL, POST,

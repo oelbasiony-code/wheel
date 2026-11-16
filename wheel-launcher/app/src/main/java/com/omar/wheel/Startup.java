@@ -43,6 +43,21 @@ final class Startup {
     private static volatile long noAutoBootUntil;
     /** The briefing's top line when it isn't the panel's greeting (WELCOME HOME, OMAR). */
     private static volatile String briefTitle;
+    /** WELCOME HOME stays up until a button is pressed (Omar's call). */
+    private static volatile boolean briefHold;
+
+    /** The briefing's clock, frozen just before it would leave while it's held. */
+    private static long briefT(long up) {
+        long t = up - briefAt;
+        return briefHold ? Math.min(t, BRIEF_MS - 1) : t;
+    }
+
+    /** Still moving (else AmbientView can drop back to its slow frame rate). */
+    static boolean animating() {
+        long up = SystemClock.uptimeMillis();
+        if (bootAt >= 0 && up - bootAt < BOOT_MS) return true;
+        return briefAt >= 0 && !(briefHold && up - briefAt > 5000);
+    }
 
     static void holdAutoBoot() {
         noAutoBootUntil = SystemClock.uptimeMillis() + 2 * 60 * 1000L;
@@ -81,6 +96,7 @@ final class Startup {
                 // Straight to the briefing, under "WELCOME HOME, OMAR".
                 playBriefing();
                 briefTitle = "WELCOME HOME, " + Config.NAME;
+                briefHold = true;
             } else {
                 // Waking up: the boot, then the briefing (even if it already played today).
                 markBriefed(c);
@@ -98,6 +114,7 @@ final class Startup {
     static void play(boolean withBriefing) {
         bootPending = false;   // a demo replaces the automatic one
         briefTitle = null;
+        briefHold = false;
         bootAt = SystemClock.uptimeMillis();
         briefAt = withBriefing ? bootAt + BOOT_MS : -1;
         pts = null;
@@ -106,6 +123,7 @@ final class Startup {
     static void playBriefing() {
         bootPending = false;
         briefTitle = null;
+        briefHold = false;
         bootAt = -1;
         briefAt = SystemClock.uptimeMillis();
     }
@@ -113,14 +131,14 @@ final class Startup {
     static boolean showing() {
         long up = SystemClock.uptimeMillis();
         if (bootAt >= 0 && up - bootAt < BOOT_MS) return true;
-        return briefAt >= 0 && up >= briefAt - 1 && up - briefAt < BRIEF_MS + BRIEF_OUT_MS;
+        return briefAt >= 0 && up >= briefAt - 1 && briefT(up) < BRIEF_MS + BRIEF_OUT_MS;
     }
 
     /** True while the screen is fully covered (nothing underneath needs drawing). */
     static boolean coversAll() {
         long up = SystemClock.uptimeMillis();
         if (bootAt >= 0 && up - bootAt < FLY_MS + HOLD_MS + OUT_MS) return true;
-        return briefAt >= 0 && up - briefAt > BRIEF_IN_MS && up - briefAt < BRIEF_MS;
+        return briefAt >= 0 && up - briefAt > BRIEF_IN_MS && briefT(up) < BRIEF_MS;
     }
 
     /** Any button: skip what's playing. The briefing fades out instead of cutting. */
@@ -131,7 +149,10 @@ final class Startup {
             if (briefAt >= 0) briefAt = up;   // a press during boot goes straight to the briefing
             return;
         }
-        if (briefAt >= 0 && up - briefAt < BRIEF_MS) briefAt = up - BRIEF_MS;
+        if (briefAt >= 0 && briefT(up) < BRIEF_MS) {
+            briefHold = false;
+            briefAt = up - BRIEF_MS;   // fade out now
+        }
     }
 
     private static boolean briefingDue(Context c) {
@@ -165,7 +186,7 @@ final class Startup {
             bootAt = -1;
         }
         if (briefAt >= 0) {
-            long t = up - briefAt;
+            long t = briefT(up);
             if (t < 0) return;
             if (t < BRIEF_MS + BRIEF_OUT_MS) drawBriefing(c, dot, w, h, t, wheel);
             else briefAt = -1;
