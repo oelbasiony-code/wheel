@@ -168,6 +168,9 @@ public final class HomeWatcher extends AccessibilityService {
     @Override
     protected boolean onKeyEvent(KeyEvent e) {
         final MessageOverlay o = overlay;
+        if (e.getAction() == KeyEvent.ACTION_UP) {
+            Log.d(TAG, "key " + e.getKeyCode() + " overlay=" + (o != null) + " wheelOnScreen=" + MainActivity.onScreen);
+        }
         if (o == null || MainActivity.onScreen) return false;
         int code = e.getKeyCode();
         boolean up = e.getAction() == KeyEvent.ACTION_UP;
