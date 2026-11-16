@@ -94,7 +94,11 @@ public final class HomeWatcher extends AccessibilityService {
 
     // ---------------------------------------------------------------- TV on/off (asks the Roku)
 
-    private static final long TV_POLL_MS = 10 * 1000L;
+    private static final long TV_POLL_MS = 5 * 1000L;
+    /** After the TV turns on: how long to wait for it to show the Fire Stick, and then
+     *  for the picture to actually appear, before the startup sequence plays. */
+    private static final long WAIT_FOR_INPUT_MS = 5 * 60 * 1000L, PICTURE_MS = 2500;
+    private long tvOnAt;   // when the TV came on and the startup hasn't played yet; 0 = none
     private volatile boolean tvWatching;
     private Thread tvThread;
     private Boolean tvWasOn;
@@ -113,17 +117,35 @@ public final class HomeWatcher extends AccessibilityService {
                             Log.d(TAG, "tv " + (on ? "on" : "off"));
                             if (on) {
                                 Govee.tvOn(c);
-                                Startup.tvOn();
+                                tvOnAt = System.currentTimeMillis();   // startup waits for the picture
                             } else {
                                 Govee.tvOff(c);
+                                tvOnAt = 0;
                             }
                         }
                         tvWasOn = on;
                         // Sitting on Wheel at 9 pm: the home light turns to candlelight.
                         if (on && MainActivity.onScreen) Govee.homeTick(c);
                     }
+                    long wait = TV_POLL_MS;
+                    if (tvOnAt > 0) {
+                        if (System.currentTimeMillis() - tvOnAt > WAIT_FOR_INPUT_MS) {
+                            tvOnAt = 0;   // never came to the Fire Stick; skip it this time
+                        } else if (Config.FIRE_TV_APP_ID.equals(RokuTv.activeApp(c))) {
+                            // On the Fire Stick: give the picture a moment, then play.
+                            tvOnAt = 0;
+                            try {
+                                Thread.sleep(PICTURE_MS);
+                            } catch (InterruptedException e) {
+                                break;
+                            }
+                            Startup.tvOn();
+                        } else {
+                            wait = 1000;   // still switching: check every second
+                        }
+                    }
                     try {
-                        Thread.sleep(TV_POLL_MS);
+                        Thread.sleep(wait);
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -139,7 +161,6 @@ public final class HomeWatcher extends AccessibilityService {
         public void onReceive(android.content.Context c, Intent i) {
             if (Intent.ACTION_SCREEN_ON.equals(i.getAction())) {
                 Govee.tvOn(c);
-                Startup.tvOn();   // the boot sequence plays next time Wheel shows
             } else if (Intent.ACTION_SCREEN_OFF.equals(i.getAction())) {
                 Govee.tvOff(c);
             }

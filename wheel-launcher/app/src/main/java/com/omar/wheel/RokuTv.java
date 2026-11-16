@@ -145,6 +145,27 @@ final class RokuTv {
         return on;
     }
 
+    /** What the TV is showing: an app id like "tvinput.hdmi4", or null. Off the main thread. */
+    static String activeApp(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String ip = Config.ROKU_TV_IP.isEmpty() ? sp.getString(K_IP, "") : Config.ROKU_TV_IP;
+        if (ip.isEmpty()) return null;
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new URL("http://" + ip + ":8060/query/active-app").openConnection();
+            c.setConnectTimeout(2000);
+            c.setReadTimeout(2000);
+            if (c.getResponseCode() != 200) return null;
+            String body = new java.util.Scanner(c.getInputStream(), "UTF-8").useDelimiter("\\A").next();
+            Matcher m = Pattern.compile("<app id=\"([^\"]*)\"").matcher(body);
+            return m.find() ? m.group(1) : null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (c != null) c.disconnect();
+        }
+    }
+
     private static Boolean powerMode(String ip) {
         HttpURLConnection c = null;
         try {
