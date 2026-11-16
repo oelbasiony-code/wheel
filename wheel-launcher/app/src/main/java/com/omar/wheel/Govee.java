@@ -64,6 +64,14 @@ final class Govee {
     }
 
     static final int PLAYSTATION = 0x0070D1, XBOX = 0x107C10;
+    /** Brightness (1-100) while an app's color shows; Wheel's home light sets its own. */
+    static final int APP_BRIGHTNESS = 100;
+
+    private static void brightness(Context c, int value) throws Exception {
+        String ip = lanIp(c);
+        if (ip != null) lanSend(ip, "brightness", new JSONObject().put("value", value));
+        else cloud(c, "devices.capabilities.range", "brightness", value);
+    }
 
     private static SharedPreferences sp(Context c) {
         return c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -130,6 +138,7 @@ final class Govee {
                         p.edit().putString(K_SAVED, now.toJson()).putBoolean(K_TINTED, true).apply();
                     }
                     fade(c, now, rgb);
+                    brightness(c, APP_BRIGHTNESS);   // apps get the strip at full brightness
                 } catch (Exception e) {
                     Log.d(HomeWatcher.TAG, "govee tint: " + e);
                 }
