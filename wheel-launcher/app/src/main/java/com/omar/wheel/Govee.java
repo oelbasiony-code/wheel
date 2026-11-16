@@ -57,7 +57,7 @@ final class Govee {
         if (pkg.startsWith("com.hulu")) return 0x1CE783;
         if (pkg.startsWith("com.amazon.avod") || pkg.contains("primevideo")) return 0x00A8E1;
         if (pkg.startsWith("com.peacock")) return 0xF5B800;
-        if (pkg.contains("youtube")) return 0xFF1A1A;   // Google's and Amazon's YouTube TV builds
+        if (pkg.contains("youtube")) return 0xFF0000;   // Google's and Amazon's YouTube TV builds
         if (pkg.startsWith("com.apple.atve")) return 0xC8D2FF;   // soft cool white
         if (pkg.startsWith("com.wbd") || pkg.startsWith("com.hbo")) return 0x6A2CFF;
         return 0;
