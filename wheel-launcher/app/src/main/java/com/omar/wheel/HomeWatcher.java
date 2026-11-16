@@ -6,7 +6,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 
@@ -98,7 +97,8 @@ public final class HomeWatcher extends AccessibilityService {
 
     private static volatile HomeWatcher instance;
     private MessageOverlay overlay;
-    private static final long ICON_FOR_MS = 10 * 60 * 1000L;
+    /** Like a phone notification: the banner shows this long, then goes away. */
+    private static final long BANNER_MS = 10 * 1000L;
 
     private final Messages.Listener onMessage = new Messages.Listener() {
         @Override
@@ -112,8 +112,7 @@ public final class HomeWatcher extends AccessibilityService {
     private final Runnable iconTimeout = new Runnable() {
         @Override
         public void run() {
-            // Unread messages still pop up next time you're on Wheel.
-            if (overlay != null && !overlay.isOpen()) removeOverlay();
+            removeOverlay();   // it stays on Wheel's card as MSG for a while
         }
     };
 
@@ -131,8 +130,10 @@ public final class HomeWatcher extends AccessibilityService {
                 ((WindowManager) getSystemService(WINDOW_SERVICE)).addView(overlay, lp);
             }
             overlay.show(text);
+            // You've seen it, so Wheel won't pop it up again (still on the card).
+            Messages.markRead(this);
             h.removeCallbacks(iconTimeout);
-            h.postDelayed(iconTimeout, ICON_FOR_MS);
+            h.postDelayed(iconTimeout, BANNER_MS);
         } catch (Exception e) {
             Log.d(TAG, "can't show message overlay: " + e);
             overlay = null;
@@ -159,94 +160,6 @@ public final class HomeWatcher extends AccessibilityService {
                 w.removeOverlay();
             }
         });
-    }
-
-    /**
-     * While the envelope is up, ☰ opens and closes it. Every other key is left alone.
-     * (Not Back: Fire OS hands Back to the app anyway, so it would also back out of your show.)
-     */
-    @Override
-    protected boolean onKeyEvent(KeyEvent e) {
-        final MessageOverlay o = overlay;
-        if (e.getAction() == KeyEvent.ACTION_UP) {
-            Log.d(TAG, "key " + e.getKeyCode() + " overlay=" + (o != null) + " wheelOnScreen=" + MainActivity.onScreen);
-        }
-        if (o == null || MainActivity.onScreen) return false;
-        int code = e.getKeyCode();
-        boolean up = e.getAction() == KeyEvent.ACTION_UP;
-        if (code == KeyEvent.KEYCODE_MENU) {
-            if (up) h.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (overlay == null) return;
-                    if (overlay.isOpen()) {
-                        Messages.markRead(HomeWatcher.this);
-                        removeOverlay();
-                    } else {
-                        overlay.setOpen(true);
-                        h.removeCallbacks(iconTimeout);
-                    }
-                }
-            });
-            return true;
-        }
-        return false;
-    }
-
-    private void startLogWatch() {
-        if (watching) return;
-        watching = true;
-        logThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (watching) {
-                    readLogOnce();
-                    if (!watching) break;
-                    try {
-                        Thread.sleep(3000); // logcat ended (or isn't allowed); try again later
-                    } catch (InterruptedException ie) {
-                        break;
-                    }
-                }
-            }
-        }, "wheel-homelog");
-        logThread.start();
-    }
-
-    private void readLogOnce() {
-        BufferedReader in = null;
-        try {
-            logProc = Runtime.getRuntime().exec(new String[]{
-                    "logcat", "-v", "brief", "-T", "1", "ActivityTaskManager:I", "*:S"});
-            in = new BufferedReader(new InputStreamReader(logProc.getInputStream()));
-            long started = SystemClock.uptimeMillis();
-            String line;
-            while (watching && (line = in.readLine()) != null) {
-                if (SystemClock.uptimeMillis() - started < LOG_WARMUP_MS) continue;
-                if (line.contains(HOME_PRESS_A) && line.contains(HOME_PRESS_B) && line.contains(HOME_PRESS_C)) {
-                    h.removeCallbacks(homePressed);
-                    // Let Fire OS finish handling the press, then put Wheel on top.
-                    h.postDelayed(homePressed, 150);
-                }
-            }
-        } catch (Exception e) {
-            Log.d(TAG, "log watch stopped: " + e);
-        } finally {
-            try {
-                if (in != null) in.close();
-            } catch (Exception ignored) {
-            }
-            if (logProc != null) logProc.destroy();
-            logProc = null;
-        }
-    }
-
-    private void stopLogWatch() {
-        watching = false;
-        Process p = logProc;
-        if (p != null) p.destroy();
-        if (logThread != null) logThread.interrupt();
-        h.removeCallbacks(homePressed);
     }
 
     // ---------------------------------------------------------------- holds

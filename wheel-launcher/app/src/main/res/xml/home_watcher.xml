@@ -3,8 +3,6 @@
     android:accessibilityEventTypes="typeWindowStateChanged|typeViewFocused"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:canRetrieveWindowContent="false"
-    android:canRequestFilterKeyEvents="true"
-    android:accessibilityFlags="flagRequestFilterKeyEvents"
     android:description="@string/home_watcher_desc"
     android:notificationTimeout="0"
     android:packageNames="com.amazon.tv.launcher" />

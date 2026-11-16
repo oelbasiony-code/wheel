@@ -130,8 +130,8 @@ final class AmbientView extends View {
         invalidate();
     }
 
-    // A message on Wheel: a big card in the middle until any button (or a minute passes).
-    private static final long MESSAGE_FOR_MS = 60 * 1000L;
+    // A message on Wheel: a big card in the middle for 10 seconds (any button closes it sooner).
+    private static final long MESSAGE_FOR_MS = 10 * 1000L;
     private static final long MESSAGE_IN_MS = 400;
     private String message;
     private long messageSince;
@@ -190,10 +190,6 @@ final class AmbientView extends View {
             DotFont.draw(c, line, x + pad, ty, p, p * 0.36f, dot, CLOCK, e);
             ty += lineH;
         }
-        float hp = h / 300f;
-        String hint = "ANY BUTTON TO CLOSE";
-        DotFont.draw(c, hint, (w - DotFont.cols(hint) * hp) / 2f, y + cardH + p * 4, hp, hp * 0.4f,
-                dot, DIM, e * 0.8f);
     }
 
     /** Go into idle mode right now (for trying it out); any remote press wakes it. */
