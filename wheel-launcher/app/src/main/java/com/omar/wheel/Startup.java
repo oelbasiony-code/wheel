@@ -63,7 +63,7 @@ final class Startup {
         noAutoBootUntil = SystemClock.uptimeMillis() + 2 * 60 * 1000L;
     }
 
-    /** Plays HOME (welcome home briefing) or WAKE (boot + briefing) as soon as Wheel shows. */
+    /** Plays HOME (welcome home briefing) or WAKE (the briefing) as soon as Wheel shows. */
     static void queue(int kind) {
         holdAutoBoot();
         queued = kind;
@@ -98,9 +98,10 @@ final class Startup {
                 briefTitle = "WELCOME HOME, " + Config.NAME;
                 briefHold = true;
             } else {
-                // Waking up: the boot, then the briefing (even if it already played today).
+                // Waking up: straight to the briefing (GOOD ___ by the time), no boot,
+                // even if it already played today.
                 markBriefed(c);
-                play(true);
+                playBriefing();
             }
             return;
         }

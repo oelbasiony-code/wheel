@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
  * with "!" (never shown as messages). Each is a one-action Shortcut or automation:
  *   !home   arrived home: strip on, TV on to the Fire Stick, WELCOME HOME briefing
  *   !away   left home: strip off, and the TV off if it's only showing Wheel
- *   !wake   alarm stopped (any time): TV on, soft light, boot + the briefing (GOOD ___ by the time)
+ *   !wake   alarm stopped (any time): TV on, soft light, the briefing (GOOD ___ by the time)
  *   !ps5    TV on to the PlayStation, strip blue
  *   !xbox   TV on to the Xbox, strip green
  * Runs inside the message listener (HomeWatcher), so it works whatever is on screen.
@@ -21,8 +21,18 @@ final class Commands {
 
     private static final ExecutorService q = Executors.newSingleThreadExecutor();
 
+    private static String lastCmd;
+    private static long lastAt;
+
     static void run(Context ctx, final String cmd) {
         final Context c = ctx.getApplicationContext();
+        // The phone sometimes runs an automation twice in a row: do it once.
+        long now = System.currentTimeMillis();
+        synchronized (Commands.class) {
+            if (cmd.equals(lastCmd) && now - lastAt < 30000L) return;
+            lastCmd = cmd;
+            lastAt = now;
+        }
         q.execute(new Runnable() {
             @Override
             public void run() {
