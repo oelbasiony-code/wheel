@@ -189,6 +189,8 @@ final class AppRepo {
 
     static final String ACTION_SETTINGS = "settings";
     static final String ACTION_AMAZON_HOME = "amazon-home";
+    /** Toggles Do Not Disturb for messages (in the all-apps list, under Menu). */
+    static final String ACTION_DND = "dnd";
 
     private static AppEntry shortcut(String action, String display) {
         AppEntry e = new AppEntry();
@@ -202,6 +204,7 @@ final class AppRepo {
 
     private final AppEntry settingsShortcut = shortcut(ACTION_SETTINGS, "FIRE TV SETTINGS");
     private final AppEntry amazonShortcut = shortcut(ACTION_AMAZON_HOME, "AMAZON HOME");
+    private final AppEntry dndShortcut = shortcut(ACTION_DND, "DO NOT DISTURB");
 
     /** The wheel's contents. all = include hidden apps and the built-in shortcuts. */
     List<AppEntry> visible(boolean all) {
@@ -209,6 +212,10 @@ final class AppRepo {
         if (all) {
             out.add(settingsShortcut);
             out.add(amazonShortcut);
+            boolean dnd = Messages.dnd(ctx);
+            dndShortcut.display = "DO NOT DISTURB " + (dnd ? "ON" : "OFF");
+            dndShortcut.label = dndShortcut.display;
+            out.add(dndShortcut);
         }
         for (String p : order) {
             AppEntry e = installed.get(p);

@@ -6,6 +6,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 
 import java.io.BufferedReader;
@@ -76,13 +78,123 @@ public final class HomeWatcher extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
+        instance = this;
         startLogWatch();
+        // Messages to the TV: listen all the time, so they arrive during shows too.
+        Messages.addListener(onMessage);
+        Messages.start(this);
     }
 
     @Override
     public void onDestroy() {
         stopLogWatch();
+        Messages.removeListener(onMessage);
+        removeOverlay();
+        if (instance == this) instance = null;
         super.onDestroy();
+    }
+
+    // ---------------------------------------------------------------- messages over other apps
+
+    private static volatile HomeWatcher instance;
+    private MessageOverlay overlay;
+    private static final long ICON_FOR_MS = 10 * 60 * 1000L;
+
+    private final Messages.Listener onMessage = new Messages.Listener() {
+        @Override
+        public void onMessage(String text) {
+            // On Wheel it pops up big there instead. Do Not Disturb: it waits for Wheel.
+            if (MainActivity.onScreen || Messages.dnd(HomeWatcher.this)) return;
+            showOverlay(text);
+        }
+    };
+
+    private final Runnable iconTimeout = new Runnable() {
+        @Override
+        public void run() {
+            // Unread messages still pop up next time you're on Wheel.
+            if (overlay != null && !overlay.isOpen()) removeOverlay();
+        }
+    };
+
+    private void showOverlay(String text) {
+        try {
+            if (overlay == null) {
+                overlay = new MessageOverlay(this);
+                WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                        WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                                | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                        android.graphics.PixelFormat.TRANSLUCENT);
+                ((WindowManager) getSystemService(WINDOW_SERVICE)).addView(overlay, lp);
+            }
+            overlay.show(text);
+            h.removeCallbacks(iconTimeout);
+            h.postDelayed(iconTimeout, ICON_FOR_MS);
+        } catch (Exception e) {
+            Log.d(TAG, "can't show message overlay: " + e);
+            overlay = null;
+        }
+    }
+
+    private void removeOverlay() {
+        h.removeCallbacks(iconTimeout);
+        if (overlay == null) return;
+        try {
+            ((WindowManager) getSystemService(WINDOW_SERVICE)).removeView(overlay);
+        } catch (Exception ignored) {
+        }
+        overlay = null;
+    }
+
+    /** Wheel came to the front: it shows the message itself. */
+    static void hideOverlay() {
+        final HomeWatcher w = instance;
+        if (w == null) return;
+        w.h.post(new Runnable() {
+            @Override
+            public void run() {
+                w.removeOverlay();
+            }
+        });
+    }
+
+    /** While the envelope is up, ☰ opens/closes it and Back closes it. Every other key is left alone. */
+    @Override
+    protected boolean onKeyEvent(KeyEvent e) {
+        final MessageOverlay o = overlay;
+        if (o == null || MainActivity.onScreen) return false;
+        int code = e.getKeyCode();
+        boolean up = e.getAction() == KeyEvent.ACTION_UP;
+        if (code == KeyEvent.KEYCODE_MENU) {
+            if (up) h.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (overlay == null) return;
+                    if (overlay.isOpen()) {
+                        Messages.markRead(HomeWatcher.this);
+                        removeOverlay();
+                    } else {
+                        overlay.setOpen(true);
+                        h.removeCallbacks(iconTimeout);
+                    }
+                }
+            });
+            return true;
+        }
+        if (code == KeyEvent.KEYCODE_BACK && o.isOpen()) {
+            if (up) h.post(new Runnable() {
+                @Override
+                public void run() {
+                    Messages.markRead(HomeWatcher.this);
+                    removeOverlay();
+                }
+            });
+            return true;
+        }
+        return false;
     }
 
     private void startLogWatch() {

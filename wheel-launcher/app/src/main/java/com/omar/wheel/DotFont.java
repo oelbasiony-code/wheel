@@ -10,6 +10,8 @@ final class DotFont {
     static final char UP = '↑';
     static final char DOWN = '↓';
     static final char DEG = '°';
+    /** The Fire TV remote's Menu button (☰), for on-screen hints. */
+    static final char MENU = '\u2261';
 
     /** data[0] = width in columns, data[1..7] = row bitmasks (bit c = column c). */
     private static final SparseArray<int[]> GLYPHS = new SparseArray<>();
@@ -69,6 +71,7 @@ final class DotFont {
         g('$', "..#..", ".####", "#.#..", ".###.", "..#.#", "####.", "..#..");
         g('%', "##...", "##..#", "...#.", "..#..", ".#...", "#..##", "...##");
         g(' ', "...", "...", "...", "...", "...", "...", "...");
+        g(MENU, ".....", "#####", ".....", "#####", ".....", "#####", ".....");
         g(DEG, "###", "#.#", "###", "...", "...", "...", "...");
         g(UP, "..#..", ".###.", "#.#.#", "..#..", "..#..", "..#..", "..#..");
         g(DOWN, "..#..", "..#..", "..#..", "..#..", "#.#.#", ".###.", "..#..");
@@ -109,6 +112,39 @@ final class DotFont {
             }
         }
         return b.toString().trim();
+    }
+
+    /** Splits text into lines of at most maxCols dot columns (at most maxLines; the last gets ".."). */
+    static java.util.List<String> wrap(String text, int maxCols, int maxLines) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        for (String word : text.split(" ")) {
+            if (word.isEmpty()) continue;
+            String tryLine = line.length() == 0 ? word : line + " " + word;
+            if (cols(tryLine) <= maxCols) {
+                line.setLength(0);
+                line.append(tryLine);
+                continue;
+            }
+            if (line.length() > 0) out.add(line.toString());
+            line.setLength(0);
+            // A single word longer than the line: cut it.
+            while (cols(word) > maxCols && word.length() > 1) {
+                int n = word.length();
+                while (n > 1 && cols(word.substring(0, n)) > maxCols) n--;
+                out.add(word.substring(0, n));
+                word = word.substring(n);
+            }
+            line.append(word);
+        }
+        if (line.length() > 0) out.add(line.toString());
+        if (out.size() > maxLines) {
+            out = new java.util.ArrayList<>(out.subList(0, maxLines));
+            String last = out.get(maxLines - 1);
+            while (last.length() > 1 && cols(last + "..") > maxCols) last = last.substring(0, last.length() - 1);
+            out.set(maxLines - 1, last.trim() + "..");
+        }
+        return out;
     }
 
     /** Width of a string in dot columns (1 empty column between glyphs). */

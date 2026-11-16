@@ -152,6 +152,12 @@ public final class MainActivity extends Activity implements WheelView.Host {
             i.removeExtra("idle_demo");
             ambient.demoIdle();
         }
+        String topic = i.getStringExtra("message_topic");
+        if (topic != null) {
+            i.removeExtra("message_topic");
+            Messages.setTopic(this, topic);
+            toast("Message topic saved");
+        }
         String link = i.getStringExtra("calendar_url");
         if (link == null) link = i.getStringExtra("calendar_link");   // older name, same thing
         if (link != null) {
@@ -179,10 +185,29 @@ public final class MainActivity extends Activity implements WheelView.Host {
         h.post(agendaLoop);
         h.removeCallbacks(trainLoop);
         h.post(trainLoop);
+        // Messages: Wheel shows them itself while it's on screen.
+        onScreen = true;
+        HomeWatcher.hideOverlay();
+        Messages.start(this);
+        Messages.addListener(onMessage);
+        String unread = Messages.unread(this);
+        if (unread != null) ambient.showMessage(unread);
     }
+
+    /** True while Wheel is the app on screen (HomeWatcher then leaves messages to it). */
+    static volatile boolean onScreen;
+
+    private final Messages.Listener onMessage = new Messages.Listener() {
+        @Override
+        public void onMessage(String text) {
+            ambient.showMessage(text);
+        }
+    };
 
     @Override
     protected void onPause() {
+        onScreen = false;
+        Messages.removeListener(onMessage);
         h.removeCallbacks(weatherLoop);
         h.removeCallbacks(agendaLoop);
         h.removeCallbacks(trainLoop);
@@ -228,8 +253,18 @@ public final class MainActivity extends Activity implements WheelView.Host {
     public boolean dispatchKeyEvent(KeyEvent e) {
         int act = e.getAction();
         boolean down = act == KeyEvent.ACTION_DOWN;
+        // A message on screen: any button closes it (and does nothing else).
+        if (ambient.messageShowing() && e.getKeyCode() != swallowKey) {
+            if (act == KeyEvent.ACTION_DOWN) swallowKey = e.getKeyCode();
+            ambient.poke();
+            return true;
+        }
         // In idle mode, the first press just wakes the screen.
         if (e.getKeyCode() == swallowKey) {
+            if (act == KeyEvent.ACTION_UP && ambient.messageShowing()) {
+                ambient.dismissMessage();
+                Messages.markRead(this);
+            }
             if (act == KeyEvent.ACTION_UP) swallowKey = -1;
             return true;
         }
@@ -318,6 +353,13 @@ public final class MainActivity extends Activity implements WheelView.Host {
                     });
                 }
             });
+            return;
+        }
+        if (AppRepo.ACTION_DND.equals(action)) {
+            boolean on = !Messages.dnd(this);
+            Messages.setDnd(this, on);
+            toast(on ? "Do Not Disturb on: messages wait for Wheel" : "Do Not Disturb off");
+            wheel.refresh();
             return;
         }
         Intent i;

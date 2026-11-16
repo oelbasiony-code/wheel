@@ -130,6 +130,69 @@ final class AmbientView extends View {
         invalidate();
     }
 
+    // A message on Wheel: a big card in the middle until any button (or a minute passes).
+    private static final long MESSAGE_FOR_MS = 60 * 1000L;
+    private static final long MESSAGE_IN_MS = 400;
+    private String message;
+    private long messageSince;
+
+    void showMessage(String text) {
+        if (text == null || text.isEmpty()) return;
+        message = text;
+        messageSince = System.currentTimeMillis();
+        poke();          // wakes idle mode so you see it
+        holdIdle = false;
+        invalidate();
+    }
+
+    boolean messageShowing() {
+        return message != null;
+    }
+
+    void dismissMessage() {
+        message = null;
+        invalidate();
+    }
+
+    private void drawMessage(Canvas c, long now) {
+        long t = now - messageSince;
+        if (t > MESSAGE_FOR_MS) {
+            message = null;
+            Messages.markRead(getContext());   // still on the card for a while
+            return;
+        }
+        float w = getWidth(), h = getHeight();
+        float k = Math.min(1f, t / (float) MESSAGE_IN_MS);
+        float e = 1f - (1f - k) * (1f - k) * (1f - k);
+        // Dim everything behind it.
+        c.drawColor(Doodles.withAlpha(0xC0000000, e));
+
+        float p = h / 130f;
+        float cardW = w * 0.56f;
+        float pad = p * 5;
+        int maxCols = (int) ((cardW - 2 * pad) / p);
+        java.util.List<String> lines = DotFont.wrap(message, maxCols, 5);
+        float lineH = 11 * p;
+        float labelP = p * 0.6f;
+        float cardH = pad + 7 * labelP + p * 5 + (lines.size() - 1) * lineH + 7 * p + pad;
+        float x = (w - cardW) / 2f;
+        // Slides up into place, like the card.
+        float y = (h - cardH) / 2f + (1f - e) * p * 8;
+        drawCard(c, x, y, cardW, cardH, p * 0.7f, e);
+        float ty = y + pad;
+        DotFont.draw(c, "MESSAGE", x + pad, ty, labelP, labelP * 0.36f, dot,
+                new int[]{WheelView.TICK_MSG}, e);
+        ty += 7 * labelP + p * 5;
+        for (String line : lines) {
+            DotFont.draw(c, line, x + pad, ty, p, p * 0.36f, dot, CLOCK, e);
+            ty += lineH;
+        }
+        float hp = h / 300f;
+        String hint = "ANY BUTTON TO CLOSE";
+        DotFont.draw(c, hint, (w - DotFont.cols(hint) * hp) / 2f, y + cardH + p * 4, hp, hp * 0.4f,
+                dot, DIM, e * 0.8f);
+    }
+
     /** Go into idle mode right now (for trying it out); any remote press wakes it. */
     void demoIdle() {
         holdIdle = true;    // stays idle until a real remote press
@@ -346,6 +409,7 @@ final class AmbientView extends View {
             trackY = newsTop + 3.5f * np - TrainDoodle.BODY_MID_ROWS * tp + TrainDoodle.ROWS * tp;
         }
         if (t >= 0) drawTrain(c, now, t, trackY, tp, normal + idle * IDLE_BRIGHTNESS);
+        if (message != null) drawMessage(c, now);
     }
 
     /**

@@ -547,12 +547,14 @@ final class WheelView extends View {
         }
     }
 
-    static final int TICK_CAL = 0xFFEDE6DA, TICK_WORD = 0xFFE8C872, TICK_RAIN = 0xFF8FB8DE;
+    static final int TICK_CAL = 0xFFEDE6DA, TICK_WORD = 0xFFE8C872, TICK_MSG = 0xFF9AD0C2, TICK_RAIN = 0xFF8FB8DE;
 
     /** Everything the rotating line cycles through right now. */
     List<Tick> tickerItems(long now) {
         java.util.ArrayList<Tick> out = new java.util.ArrayList<>();
         TimeZone tz = TimeZone.getDefault();
+        String msg = Messages.recent(getContext(), now);
+        if (msg != null) out.add(new Tick("MSG", msg, TICK_MSG));
         for (String[] l : Agenda.lines(agenda, now, tz, 3)) out.add(new Tick(l[0], l[1], TICK_CAL));
         if (calendarNote != null) out.add(new Tick("CAL", calendarNote, TICK_CAL));
 
