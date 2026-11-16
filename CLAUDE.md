@@ -47,15 +47,17 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 - Texts: iPhone Shortcuts Message automations (chosen senders, plus one with "contains a space"),
   Find Contacts by Sender → Get Name, POST to the topic with header Title = [Name]|[Sender] : [Message].
 - `MessageOverlay.java`: the envelope icon (top-right, 10 s, dot teal = text, orange = mail),
-  like a phone's notification icon. Over apps HomeWatcher shows it (icon only; ☰ can't be caught
-  there, so it stays unread). On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
+  like a phone's notification icon. Over apps HomeWatcher shows it and catches ☰ while it shows
+  (accessibility key filtering, only ☰ and Back-while-open): ☰ opens the whole message in the
+  corner, ☰/Back closes it, closes itself after 30 s. Over Disney+ (the last app opened from
+  Wheel, MainActivity.lastApp) the icon also has a one-line preview. On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
   the middle; ☰, Back or any button closes. Play/Pause opens the newest any time. Texts show on
   the card as MSG, emails as MAIL, for 5 minutes or until opened; then MSG says NO NEW MESSAGES and MAIL says NO NEW
   MAIL (both always on the card). Play/Pause still opens the newest for 2 hours. An email = anything with a body (phone texts send only a title).
   Do Not Disturb (tile in the all-apps list): no icon over shows; it shows when you're back on Wheel.
   An empty body arrives from ntfy as "triggered"; Wheel then shows just the title. The same text twice within 30 s shows once (two phone automations: chosen senders + "contains a space").
-  Don't rely on catching remote keys in HomeWatcher: on this stick key filtering didn't reach
-  the service reliably, and Back always reaches the app anyway.
+  Key filtering in HomeWatcher was flaky in an earlier try (Back leaked into apps); it's back
+  for ☰ only, and Back only while the corner card is open.
 - `Commands.java`: phone commands on the same topic, starting with "!" (never shown):
   !home (strip on, TV on to the Fire Stick via Roku PowerOn + InputHDMI4, WELCOME HOME briefing that stays until a button),
   !away (strip off; TV off only if it's just showing Wheel), !wake (any time: TV on, no boot,

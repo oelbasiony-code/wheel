@@ -11,8 +11,9 @@ import android.view.View;
  * top-right corner with a colored dot (teal = text, orange = mail). It slides in, stays
  * 10 seconds and goes away by itself; it stays on Wheel's card afterwards (MSG / MAIL).
  * On Wheel, ☰ opens it big in the middle (☰ again, Back or any button closes it).
- * Over other apps it's only the icon: Fire OS doesn't reliably hand ☰ to Wheel there,
- * so it waits for you on Wheel. HomeWatcher shows this view over apps; Wheel draws the
+ * Over other apps HomeWatcher catches ☰ while the icon shows and opens the whole message in
+ * the corner (☰ or Back closes it). Over Disney+ the icon also gets a one-line preview, in
+ * case ☰ doesn't come through there. HomeWatcher shows this view over apps; Wheel draws the
  * same icon with drawIcon().
  */
 final class MessageOverlay extends View {
@@ -33,23 +34,88 @@ final class MessageOverlay extends View {
     private final Paint dot = new Paint(Paint.ANTI_ALIAS_FLAG);
     private boolean showing, mail;
     private long since;
+    private String preview;
 
     MessageOverlay(Context c) {
         super(c);
         dot.setStyle(Paint.Style.FILL);
     }
 
-    void show(boolean isMail) {
+    private String full;     // the whole message, for ☰
+    private boolean open;    // ☰ opened it in the corner
+
+    /** withPreview: a one-line preview beside the icon (over Disney+). */
+    void show(String text, boolean isMail, boolean withPreview) {
         showing = true;
         mail = isMail;
+        full = text;
+        open = false;
+        preview = withPreview ? text : null;
         since = SystemClock.uptimeMillis();
         invalidate();
+    }
+
+    void setOpen(boolean on) {
+        open = on;
+        invalidate();
+    }
+
+    boolean isOpen() {
+        return open;
     }
 
     @Override
     protected void onDraw(Canvas c) {
         if (!showing) return;
-        if (drawIcon(c, getWidth(), getHeight(), mail, false, since, dot)) postInvalidateOnAnimation();
+        if (open && full != null) {
+            drawOpen(c, getWidth(), getHeight());
+            return;
+        }
+        boolean moving = drawIcon(c, getWidth(), getHeight(), mail, false, since, dot);
+        if (preview != null) drawPreview(c, getWidth(), getHeight(), preview, since, dot);
+        if (moving) postInvalidateOnAnimation();
+    }
+
+    private final android.graphics.RectF pill = new android.graphics.RectF();
+
+    /** ☰ over an app: the whole message in a card in the corner (☰ or Back closes it). */
+    private void drawOpen(Canvas c, float w, float h) {
+        float p = h / 220f;
+        float cardW = w * 0.38f, pad = p * 5;
+        int maxCols = (int) ((cardW - 2 * pad) / p);
+        java.util.List<String> lines = DotFont.wrap(full, maxCols, 8);
+        float lineH = 10 * p, lp = p * 0.7f;
+        float cardH = pad + 7 * lp + p * 5 + (lines.size() - 1) * lineH + 7 * p + pad;
+        float right = w * 0.95f, left = right - cardW, top = h * 0.06f;
+        dot.setColor(0xE8000000);
+        pill.set(left, top, right, top + cardH);
+        c.drawRoundRect(pill, p * 3, p * 3, dot);
+        float y = top + pad;
+        DotFont.draw(c, mail ? "MAIL" : "MESSAGE", left + pad, y, lp, lp * 0.36f, dot,
+                new int[]{accent(mail)}, 1f);
+        y += 7 * lp + p * 5;
+        for (String line : lines) {
+            DotFont.draw(c, line, left + pad, y, p, p * 0.36f, dot, new int[]{CREAM}, 1f);
+            y += lineH;
+        }
+    }
+
+    /** One line of the message in a dark pill, just left of the envelope. */
+    private void drawPreview(Canvas c, float w, float h, String text, long since, Paint dot) {
+        float k = Math.min(1f, (SystemClock.uptimeMillis() - since) / (float) IN_MS);
+        float e = 1f - (1f - k) * (1f - k) * (1f - k);
+        float ip = h / 150f;                              // the envelope's pitch
+        float envX = w * 0.95f - ENVELOPE[0].length() * ip;
+        float envMid = h * 0.06f - (1f - e) * ip * 6 + ENVELOPE.length * ip / 2f;
+        float p = h / 220f;
+        String line = WheelView.fit(text, 46);
+        float tw = DotFont.cols(line) * p, pad = p * 4;
+        float right = envX - ip * 3, left = right - tw - pad * 2;
+        float top = envMid - 3.5f * p - pad * 0.8f, bottom = envMid + 3.5f * p + pad * 0.8f;
+        dot.setColor(Math.round(e * 0xD9) << 24);
+        pill.set(left, top, right, bottom);
+        c.drawRoundRect(pill, p * 3, p * 3, dot);
+        DotFont.draw(c, line, left + pad, envMid - 3.5f * p, p, p * 0.36f, dot, new int[]{CREAM}, e);
     }
 
     static int accent(boolean mail) {

@@ -202,7 +202,7 @@ public final class HomeWatcher extends AccessibilityService {
         public void onMessage(String text, boolean mail) {
             // On Wheel, Wheel draws the banner itself. Do Not Disturb: it waits for Wheel.
             if (MainActivity.onScreen || Messages.dnd(HomeWatcher.this)) return;
-            showOverlay(mail);
+            showOverlay(text, mail);
         }
     };
 
@@ -213,7 +213,7 @@ public final class HomeWatcher extends AccessibilityService {
         }
     };
 
-    private void showOverlay(boolean mail) {
+    private void showOverlay(String text, boolean mail) {
         try {
             if (overlay == null) {
                 overlay = new MessageOverlay(this);
@@ -226,7 +226,8 @@ public final class HomeWatcher extends AccessibilityService {
                         android.graphics.PixelFormat.TRANSLUCENT);
                 ((WindowManager) getSystemService(WINDOW_SERVICE)).addView(overlay, lp);
             }
-            overlay.show(mail);
+            String app = MainActivity.lastApp;
+            overlay.show(text, mail, app != null && app.startsWith("com.disney"));
             // Still unread: back on Wheel the icon shows again and ☰ opens it.
             h.removeCallbacks(iconTimeout);
             h.postDelayed(iconTimeout, BANNER_MS);
@@ -391,6 +392,37 @@ public final class HomeWatcher extends AccessibilityService {
             startActivity(i);
         } catch (Exception ignored) {
         }
+    }
+
+    /**
+     * ☰ while a message icon shows over an app: open the whole message in the corner;
+     * ☰ or Back again closes it. Only those two keys, only while a message is showing, so
+     * nothing else ever leaks into (or away from) the app you're watching.
+     */
+    @Override
+    protected boolean onKeyEvent(android.view.KeyEvent e) {
+        final MessageOverlay o = overlay;
+        if (o == null || MainActivity.onScreen) return false;
+        int code = e.getKeyCode();
+        boolean up = e.getAction() == android.view.KeyEvent.ACTION_UP;
+        boolean menu = code == android.view.KeyEvent.KEYCODE_MENU;
+        boolean back = code == android.view.KeyEvent.KEYCODE_BACK;
+        if (!menu && !(back && o.isOpen())) return false;
+        if (up) h.post(new Runnable() {
+            @Override
+            public void run() {
+                if (overlay == null) return;
+                if (overlay.isOpen()) {
+                    removeOverlay();
+                } else {
+                    overlay.setOpen(true);
+                    Messages.markRead(HomeWatcher.this);
+                    h.removeCallbacks(iconTimeout);
+                    h.postDelayed(iconTimeout, 30 * 1000L);   // closes itself after 30 s
+                }
+            }
+        });
+        return true;
     }
 
     @Override
