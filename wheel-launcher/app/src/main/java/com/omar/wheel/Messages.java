@@ -180,7 +180,7 @@ final class Messages {
                 // Emails arrive with line breaks (a body); texts from the phone don't.
                 final boolean mail = raw.indexOf('\n') >= 0;
                 String text = tidy(raw);
-                String title = o.optString("title", "").trim();
+                String title = nameOrNumber(o.optString("title", "").trim());
                 // ntfy fills in "triggered" when the phone sent an empty body.
                 if (text.equalsIgnoreCase("triggered")) text = "";
                 if (!title.isEmpty()) text = text.isEmpty() ? title : title + ": " + text;
@@ -203,6 +203,22 @@ final class Messages {
             live = null;
             con.disconnect();
         }
+    }
+
+    /**
+     * The phone sends "NAME|NUMBER : TEXT" (the contact's name, a bar, then the number).
+     * Shows the name when the sender is a saved contact, otherwise the number.
+     */
+    static String nameOrNumber(String title) {
+        int bar = title.indexOf('|');
+        if (bar < 0) return title;
+        String name = title.substring(0, bar).trim();
+        String rest = title.substring(bar + 1);
+        int colon = rest.indexOf(':');
+        String number = (colon < 0 ? rest : rest.substring(0, colon)).trim();
+        String text = colon < 0 ? "" : rest.substring(colon + 1).trim();
+        String who = name.isEmpty() ? number : name;
+        return text.isEmpty() ? who : who + ": " + text;
     }
 
     private static final int MAX_CHARS = 120;
