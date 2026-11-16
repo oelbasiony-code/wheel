@@ -24,9 +24,9 @@ import java.util.TimeZone;
  */
 final class Startup {
 
-    private static final long FLY_MS = 950, HOLD_MS = 650, SWEEP_MS = 700;
+    private static final long FLY_MS = 1100, HOLD_MS = 700, SWEEP_MS = 1400;
     private static final long BOOT_MS = FLY_MS + HOLD_MS + SWEEP_MS;
-    private static final long BRIEF_IN_MS = 400, BRIEF_MS = 10000, BRIEF_OUT_MS = 600;
+    private static final long BRIEF_IN_MS = 700, BRIEF_MS = 10000, BRIEF_OUT_MS = 1200;
     private static final int BRIEF_BEFORE_HOUR = 11;
 
     private static final int CREAM = 0xFFEDE6DA, TEAL = 0xFF9AD0C2, DIM = 0xFF6E6A62;
@@ -131,6 +131,14 @@ final class Startup {
         return 1f - (1f - k) * (1f - k) * (1f - k);
     }
 
+    /** Slow start, slow end: for anything that slides across the screen. */
+    private static float smooth(float k) {
+        k = Math.max(0f, Math.min(1f, k));
+        return k * k * k * (k * (k * 6f - 15f) + 10f);
+    }
+
+    private static final Paint soft = new Paint();
+
     private static int alpha(int color, float a) {
         int ca = Math.round(((color >>> 24) & 0xFF) * Math.max(0f, Math.min(1f, a)));
         return (color & 0x00FFFFFF) | (ca << 24);
@@ -153,10 +161,17 @@ final class Startup {
         float x0 = (w - cols * p) / 2f, y0 = (h - 7 * p) / 2f;
 
         // The scan line: everything right of it is still the boot screen.
-        float edge = 0;
-        if (t > FLY_MS + HOLD_MS) edge = ease((t - FLY_MS - HOLD_MS) / (float) SWEEP_MS) * (w + p * 6);
+        // A soft edge (black fading in over a band) instead of a hard cut.
+        float band = w * 0.18f;
+        float edge = -band;
+        if (t > FLY_MS + HOLD_MS) edge = -band + smooth((t - FLY_MS - HOLD_MS) / (float) SWEEP_MS) * (w + band * 2);
         dot.setColor(0xFF000000);
-        c.drawRect(edge, 0, w, h, dot);
+        c.drawRect(Math.max(0, edge + band), 0, w, h, dot);
+        if (edge + band > 0) {
+            soft.setShader(new android.graphics.LinearGradient(edge, 0, edge + band, 0,
+                    0x00000000, 0xFF000000, android.graphics.Shader.TileMode.CLAMP));
+            c.drawRect(Math.max(0, edge), 0, Math.min(w, edge + band), h, soft);
+        }
 
         int n = pts.length / 2;
         float r = p * 0.36f;
@@ -167,25 +182,28 @@ final class Startup {
             float k = ease((t - delay) / (FLY_MS * 0.55f));
             float fx = x0 + (from[2 * i] + (tx - from[2 * i]) * k) * p + p / 2;
             float fy = y0 + (from[2 * i + 1] + (ty - from[2 * i + 1]) * k) * p + p / 2;
-            if (fx < edge) continue;                // already swept away
+            float gone = (edge + band * 0.5f - fx) / (band * 0.5f);   // fades as the edge passes
+            if (gone >= 1f) continue;
             boolean landed = k >= 1f;
-            dot.setColor(alpha(landed ? CREAM : TEAL, 0.25f + 0.75f * k));
+            float fadeA = gone > 0f ? 1f - gone : 1f;
+            dot.setColor(alpha(landed ? CREAM : TEAL, (0.25f + 0.75f * k) * fadeA));
             c.drawCircle(fx, fy, landed ? r : r * 0.7f, dot);
         }
 
-        if (edge > 0 && edge < w) {
-            // A dotted vertical line, brighter in the middle, like a scanner.
+        float sx = edge + band;
+        if (sx > 0 && sx < w) {
+            // A dotted vertical line at the leading edge, brighter in the middle, like a scanner.
             for (float y = p; y < h; y += p * 1.2f) {
                 float mid = 1f - Math.abs(y - h / 2f) / (h / 2f);
-                dot.setColor(alpha(TEAL, 0.25f + 0.75f * mid));
-                c.drawCircle(edge, y, p * 0.3f, dot);
+                dot.setColor(alpha(TEAL, 0.2f + 0.6f * mid));
+                c.drawCircle(sx, y, p * 0.3f, dot);
             }
         }
     }
 
     private static void drawBriefing(Canvas c, Paint dot, float w, float h, long t, WheelView wheel) {
-        float in = ease(t / (float) BRIEF_IN_MS);
-        float out = t > BRIEF_MS ? ease((t - BRIEF_MS) / (float) BRIEF_OUT_MS) : 0f;
+        float in = smooth(t / (float) BRIEF_IN_MS);
+        float out = t > BRIEF_MS ? smooth((t - BRIEF_MS) / (float) BRIEF_OUT_MS) : 0f;
         float bg = in * (1f - out);
         dot.setColor(alpha(0xFA000000, bg));
         c.drawRect(0, 0, w, h, dot);
@@ -226,17 +244,17 @@ final class Startup {
         float lift = p * 6;
         float leave = out * p * 10;
 
-        float k = ease((t - 150) / 700f) * (1f - out);
+        float k = smooth((t - 200) / 1000f) * (1f - out);
         float y = top + (1f - k) * lift - leave;
         DotFont.draw(c, hello, (w - helloW) / 2f, y, big, big * r, dot, new int[]{CREAM}, k);
         y += 7 * big + p * 5;
-        k = ease((t - 450) / 700f) * (1f - out);
+        k = smooth((t - 500) / 1000f) * (1f - out);
         DotFont.draw(c, date, (w - dateW) / 2f, y + (1f - k) * lift - leave, p, p * r, dot,
                 new int[]{DIM}, k);
         y = top + 7 * big + p * 5 + 7 * p + p * 14;
 
         // A faint dotted rule between the greeting and the rows.
-        float rk = ease((t - 700) / 900f) * (1f - out);
+        float rk = smooth((t - 800) / 1200f) * (1f - out);
         float ruleY = y - p * 7 - leave;
         float half = blockW / 2f * rk;
         dot.setColor(alpha(0xFF3A3834, rk));
@@ -245,7 +263,7 @@ final class Startup {
         }
 
         for (int i = 0; i < 3; i++) {
-            k = ease((t - 900 - i * 350L) / 700f) * (1f - out);
+            k = smooth((t - 1100 - i * 400L) / 1000f) * (1f - out);
             if (k > 0f) {
                 float ry = y + (1f - k) * lift - leave;
                 DotFont.draw(c, labels[i], left, ry + (rowH - 7 * lp) / 2f, lp, lp * r, dot,
