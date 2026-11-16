@@ -109,6 +109,11 @@ public final class MainActivity extends Activity implements WheelView.Host {
                             lastWeather = System.currentTimeMillis();
                             wheel.setWeather(now, range, code, isDay);
                             wheel.setWeatherExtra(extra);
+                            Weather.save(MainActivity.this, now, range, code, isDay);
+                        } else {
+                            // Neither service answered: try again in a minute, not 5.
+                            h.removeCallbacks(weatherLoop);
+                            h.postDelayed(weatherLoop, 60 * 1000L);
                         }
                     }
                 });
@@ -128,6 +133,9 @@ public final class MainActivity extends Activity implements WheelView.Host {
         root.addView(ambient);
         setContentView(root);
         wheel.requestFocus();
+        // The last good weather right away (and through an outage) until a fresh one arrives.
+        Object[] wx = Weather.saved(this);
+        if (wx != null) wheel.setWeather((String) wx[0], (String) wx[1], (Integer) wx[2], (Boolean) wx[3]);
         checkDemo(getIntent());
     }
 
