@@ -121,23 +121,18 @@ idle), "NYT" label, a dot between headlines, refreshed every 15 minutes, all in 
 The bottom is shared: the train rides on top of the ticker like rails. Never put the train at
 the top.
 
-## Next up (Omar's picks, in order)
+## Status (Nov 16)
 
-1. **Messages to the TV**: built (see Messages.java). Left: Omar's iPhone side (Shortcut and/or
-   automations for chosen iMessages and Gmail via Apple Mail).
-2. **Govee lights** (built, untested until LAN Control is on) (model H615C LED strip): (a) lights on when the TV turns on, off when it
-   turns off, with a hidden toggle so Omar can switch this on/off; (b) when a streaming app
-   opens, fade the lights to that app's brand color (Netflix red, Disney+ blue...), back to
-   normal on Home. Screen-content color matching isn't possible on the stick (DRM blocks capture).
-   Prefer Govee's LAN API (UDP multicast scan 239.255.255.250:4001, replies on 4002, commands
-   to the light's IP on 4003; needs "LAN Control" on in the Govee Home app). On Nov 16 a scan
-   from the Mac got no reply, so LAN Control was probably off. Cloud API key is saved on the stick (Nov 16); strip = H615C "RGB Strip Lights" (LAN Control unavailable).
+All of Omar's picks are built and on the TV: messages (texts via iPhone Shortcut with contact
+names; BU email via Gmail forwarding to ntfy's email address), the envelope icon + MSG/MAIL
+cards, Govee (cloud API key; app colors at 100%, home light warm white by day / candlelight
+9 pm-5 am, LIGHTS FOLLOW TV tile, TV on/off from the Roku's power-mode), the startup
+sequence with its news line, the daily briefing (first TV-on at 5 am or later), the calendar
+countdown on the card, WORD OF DAY, centered idle mode.
 
-Built Nov 16 (Omar said go):
+Ideas Omar liked but hasn't picked yet: departure warning ("LEAVE IN 8 MIN" + amber strip),
+focus when gaming (PS5/Xbox turns on Do Not Disturb), sleep timer for TV + strip, phone
+quick actions through the topic ("movie mode"), weekly recap in Sunday's briefing.
 
-3. **Startup sequence**: when Wheel first appears after the TV turns on, a ~2 s dot-matrix
-   boot (dots fly in, "WELCOME BACK, OMAR", wheel builds itself). JARVIS feel.
-4. **Morning briefing**: first time on before 11 am, a full-screen moment with weather, first
-   calendar event, next train; then settles into the wheel.
-
-Not wanted: sunrise/sunset, prayer times, countdowns, sports scores. Reminders: later.
+Not wanted: sunrise/sunset, prayer times, days-until countdowns, sports scores. (The
+10-minute calendar countdown on the card IS wanted.) Reminders: later.
