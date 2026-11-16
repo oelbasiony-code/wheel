@@ -25,6 +25,18 @@ public final class MainActivity extends Activity implements WheelView.Host {
     private int swallowKey = -1;
 
     private boolean okDown, okLongFired;
+    private boolean menuDown, menuLongFired;
+
+    /** Holding ☰ opens the inbox (a short press is the usual ☰). */
+    private final Runnable menuLong = new Runnable() {
+        @Override
+        public void run() {
+            if (menuDown) {
+                menuLongFired = true;
+                ambient.openInbox();
+            }
+        }
+    };
     private boolean fetchingWeather;
     private long lastWeather;
 
@@ -160,6 +172,15 @@ public final class MainActivity extends Activity implements WheelView.Host {
             i.removeExtra("boot_demo");
             Startup.play(i.getBooleanExtra("briefing", false));
         }
+        String cmd = i.getStringExtra("command");   // try a phone command: --es command home
+        if (cmd != null) {
+            i.removeExtra("command");
+            Commands.run(this, cmd);
+        }
+        if (i.getBooleanExtra("inbox_demo", false)) {
+            i.removeExtra("inbox_demo");
+            ambient.openInbox();
+        }
         if (i.getBooleanExtra("briefing_demo", false)) {
             i.removeExtra("briefing_demo");
             Startup.playBriefing();
@@ -256,6 +277,8 @@ public final class MainActivity extends Activity implements WheelView.Host {
         h.removeCallbacks(agendaLoop);
         h.removeCallbacks(trainLoop);
         h.removeCallbacks(longPress);
+        h.removeCallbacks(menuLong);
+        menuDown = false;
         ambient.setActive(false);
         okDown = false;
         super.onPause();
@@ -303,6 +326,26 @@ public final class MainActivity extends Activity implements WheelView.Host {
                 Startup.skip();
                 swallowKey = e.getKeyCode();
             }
+            return true;
+        }
+        // The inbox: up/down choose, OK opens, Back or ☰ closes.
+        if (ambient.inboxShowing()) {
+            int k = e.getKeyCode();
+            if (down && k == KeyEvent.KEYCODE_DPAD_UP) ambient.inboxMove(-1);
+            else if (down && k == KeyEvent.KEYCODE_DPAD_DOWN) ambient.inboxMove(1);
+            else if (act == KeyEvent.ACTION_UP && (k == KeyEvent.KEYCODE_DPAD_CENTER
+                    || k == KeyEvent.KEYCODE_ENTER || k == KeyEvent.KEYCODE_BUTTON_A)) {
+                if (!menuLongFired) ambient.inboxOpenSelected();
+            } else if (act == KeyEvent.ACTION_UP && (k == KeyEvent.KEYCODE_BACK
+                    || k == KeyEvent.KEYCODE_MENU)) {
+                if (k == KeyEvent.KEYCODE_MENU && menuLongFired) {
+                    menuLongFired = false;   // the release of the hold that opened it
+                    menuDown = false;
+                } else {
+                    ambient.closeInbox();
+                }
+            }
+            ambient.poke();
             return true;
         }
         // Play/Pause opens the last message big (it's on the card for 2 hours) and closes it.
@@ -370,10 +413,19 @@ public final class MainActivity extends Activity implements WheelView.Host {
                 if (down && !wheel.onLeftRight(1)) ambient.stepTicker(1);
                 return true;
             case KeyEvent.KEYCODE_MENU:
-                // A message icon in the corner: ☰ opens it. Otherwise the all-apps list.
-                if (act == KeyEvent.ACTION_UP) {
-                    if (ambient.iconShowing()) ambient.openIcon();
-                    else wheel.onMenu();
+                // Hold: the inbox. Press: a message icon in the corner opens; otherwise the
+                // all-apps list.
+                if (down && e.getRepeatCount() == 0) {
+                    menuDown = true;
+                    menuLongFired = false;
+                    h.postDelayed(menuLong, LONG_PRESS_MS);
+                } else if (act == KeyEvent.ACTION_UP) {
+                    h.removeCallbacks(menuLong);
+                    if (menuDown && !menuLongFired) {
+                        if (ambient.iconShowing()) ambient.openIcon();
+                        else wheel.onMenu();
+                    }
+                    menuDown = false;
                 }
                 return true;
             case KeyEvent.KEYCODE_BACK:

@@ -138,6 +138,7 @@ final class Config {
     static final String XBOX_INPUT = "InputHDMI2";
     /** The Fire Stick's input as the Roku reports it (query/active-app). Startup waits for it. */
     static final String FIRE_TV_APP_ID = "tvinput.hdmi4";
+    static final String FIRE_TV_INPUT = "InputHDMI4";   // the key that switches the TV to it
 
     /** The Roku TV's IP address (Settings > Network > About). "" = find it on the network. */
     static final String ROKU_TV_IP = "";

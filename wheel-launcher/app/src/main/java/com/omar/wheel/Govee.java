@@ -134,6 +134,33 @@ final class Govee {
     private static volatile int sentRgb = -1, sentBright = -1;
     private static volatile boolean sentHome;
 
+    /** Phone commands: strip on in the home light / off, whatever the LIGHTS FOLLOW TV tile says. */
+    static void lightsOn(Context ctx) {
+        final Context c = ctx.getApplicationContext();
+        ++gen;
+        q.execute(new Runnable() {
+            @Override
+            public void run() {
+                power(c, true);
+                sentHome = false;
+                home(c);
+            }
+        });
+    }
+
+    static void lightsOff(Context ctx) {
+        final Context c = ctx.getApplicationContext();
+        ++gen;
+        q.execute(new Runnable() {
+            @Override
+            public void run() {
+                power(c, false);
+                sentHome = false;
+                sp(c).edit().putBoolean(K_TINTED, false).apply();
+            }
+        });
+    }
+
     /** An app opened: its color at full brightness. */
     static void tint(Context ctx, final int rgb) {
         if (rgb == 0) return;

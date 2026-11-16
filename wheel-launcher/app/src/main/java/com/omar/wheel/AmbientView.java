@@ -193,6 +193,103 @@ final class AmbientView extends View {
         MessageOverlay.drawIcon(c, getWidth(), getHeight(), iconMail, false, iconSince, dot);
     }
 
+    // ---------------------------------------------------------------- the inbox (hold ☰)
+
+    private java.util.List<Messages.Item> inbox;
+    private int inboxSel;
+    private long inboxSince;
+
+    void openInbox() {
+        inbox = Messages.history(getContext());
+        inboxSel = 0;
+        inboxSince = System.currentTimeMillis();
+        iconText = null;
+        Messages.markRead(getContext());
+        poke();
+        holdIdle = false;
+        invalidate();
+    }
+
+    boolean inboxShowing() {
+        return inbox != null;
+    }
+
+    void closeInbox() {
+        inbox = null;
+        invalidate();
+    }
+
+    void inboxMove(int dir) {
+        if (inbox == null || inbox.isEmpty()) return;
+        inboxSel = Math.max(0, Math.min(inbox.size() - 1, inboxSel + dir));
+        invalidate();
+    }
+
+    /** OK in the inbox: open the chosen one big (Back from there closes it). */
+    void inboxOpenSelected() {
+        if (inbox == null || inbox.isEmpty()) return;
+        Messages.Item it = inbox.get(inboxSel);
+        inbox = null;
+        openMessage(it.text, it.mail);
+    }
+
+    private static String ago(long t, long now) {
+        long m = Math.max(0, (now - t) / 60000);
+        if (m < 1) return "NOW";
+        if (m < 60) return m + " MIN";
+        if (m < 24 * 60) return (m / 60) + " H";
+        return (m / (24 * 60)) + " D";
+    }
+
+    private void drawInbox(Canvas c, long now) {
+        float w = getWidth(), h = getHeight();
+        float k = Math.min(1f, (now - inboxSince) / 300f);
+        float e = 1f - (1f - k) * (1f - k) * (1f - k);
+        c.drawColor(Doodles.withAlpha(0xF5000000, e));
+
+        float p = h / 150f;                         // row text pitch
+        float lp = p * 0.75f;                       // labels and times
+        float rowH = 7 * p + p * 7;
+        float panelW = w * 0.7f;
+        float left = (w - panelW) / 2f;
+        float top = h * 0.14f;
+        DotFont.draw(c, "INBOX", left, top, lp, lp * 0.36f, dot, CLOCK, e);
+        String hint = "OK OPENS   BACK CLOSES";
+        DotFont.draw(c, hint, left + panelW - DotFont.cols(hint) * lp * 0.8f, top, lp * 0.8f,
+                lp * 0.8f * 0.36f, dot, new int[]{0xFF6E6A62}, e);
+        float y = top + 7 * lp + p * 8;
+
+        if (inbox.isEmpty()) {
+            DotFont.draw(c, "NOTHING YET", left, y, p, p * 0.36f, dot, DIM, e);
+            return;
+        }
+        int visible = (int) ((h * 0.92f - y) / rowH);
+        int first = Math.max(0, Math.min(inboxSel - visible / 2, inbox.size() - visible));
+        float labelW = DotFont.cols("MAIL") * lp + p * 5;
+        float timeW = DotFont.cols("59 MIN") * lp + p * 4;
+        int maxCols = (int) ((panelW - labelW - timeW - p * 6) / p);
+        for (int i = first; i < Math.min(inbox.size(), first + visible); i++) {
+            Messages.Item it = inbox.get(i);
+            boolean sel = i == inboxSel;
+            float a = e * (sel ? 1f : 0.55f);
+            if (sel) {
+                // A soft bar behind the chosen row, and a marker on its left.
+                dot.setColor(Doodles.withAlpha(0xFF15171A, e));
+                c.drawRoundRect(new android.graphics.RectF(left - p * 4, y - p * 3, left + panelW + p * 2,
+                        y + 7 * p + p * 3), p * 2, p * 2, dot);
+                dot.setColor(Doodles.withAlpha(it.mail ? WheelView.TICK_MAIL : WheelView.TICK_MSG, e));
+                c.drawCircle(left - p * 2, y + 3.5f * p, p * 0.6f, dot);
+            }
+            float ly = y + (7 * p - 7 * lp) / 2f;
+            DotFont.draw(c, it.mail ? "MAIL" : "MSG", left, ly, lp, lp * 0.36f, dot,
+                    new int[]{it.mail ? WheelView.TICK_MAIL : WheelView.TICK_MSG}, a);
+            DotFont.draw(c, WheelView.fit(it.text, maxCols), left + labelW, y, p, p * 0.36f, dot, CLOCK, a);
+            String t = ago(it.time, now);
+            DotFont.draw(c, t, left + panelW - DotFont.cols(t) * lp, ly, lp, lp * 0.36f, dot, DIM, a);
+            y += rowH;
+        }
+    }
+
     boolean messageShowing() {
         return message != null;
     }
@@ -468,7 +565,8 @@ final class AmbientView extends View {
         float np = h / 170f;
         float trackY = h * 0.955f - 3.5f * np - TrainDoodle.BODY_MID_ROWS * tp + TrainDoodle.ROWS * tp;
         if (t >= 0) drawTrain(c, now, t, trackY, tp, normal + idle * IDLE_BRIGHTNESS);
-        if (message != null) drawMessage(c, now);
+        if (inbox != null) drawInbox(c, now);
+        else if (message != null) drawMessage(c, now);
         else if (iconText != null) drawIcon(c);
         // The startup sequence / morning briefing goes over everything.
         if (Startup.showing()) {

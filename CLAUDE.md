@@ -55,6 +55,14 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   An empty body arrives from ntfy as "triggered"; Wheel then shows just the title. The same text twice within 30 s shows once (two phone automations: chosen senders + "contains a space").
   Don't rely on catching remote keys in HomeWatcher: on this stick key filtering didn't reach
   the service reliably, and Back always reaches the app anyway.
+- `Commands.java`: phone commands on the same topic, starting with "!" (never shown):
+  !home (strip on, TV on to the Fire Stick via Roku PowerOn + InputHDMI4, WELCOME HOME briefing),
+  !away (strip off; TV off only if it's just showing Wheel), !wake (before noon: TV on, boot +
+  briefing even if already shown), !ps5 / !xbox (TV on, input, strip color). Try one:
+  `--es command home`. Each is a one-action iPhone Shortcut/automation (Get Contents of URL, POST,
+  body = the command).
+- Inbox: hold ☰ on Wheel: last 10 texts/emails (Messages.history), up/down, OK opens, Back closes.
+  Try it: `--ez inbox_demo true`.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
 - `Weather.java`: Open-Meteo (no key); MET Norway backup when it doesn't answer; last good reading saved and shown at start.
 - `RokuTv.java`: PLAYSTATION / XBOX tiles switch the TV input over Roku ECP (port 8060).

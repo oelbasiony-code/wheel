@@ -36,6 +36,26 @@ final class Startup {
     /** Set when the TV turns on (and when Wheel first starts). */
     private static volatile boolean bootPending = true;
 
+    /** Phone commands (see Commands): what to play next time Wheel shows. */
+    static final int NONE = 0, HOME = 1, WAKE = 2;
+    private static volatile int queued = NONE;
+    /** A phone command is turning the TV on: the normal boot stays out of it for a bit. */
+    private static volatile long noAutoBootUntil;
+    /** The briefing's top line when it isn't the panel's greeting (WELCOME HOME, OMAR). */
+    private static volatile String briefTitle;
+
+    static void holdAutoBoot() {
+        noAutoBootUntil = SystemClock.uptimeMillis() + 2 * 60 * 1000L;
+    }
+
+    /** Plays HOME (welcome home briefing) or WAKE (boot + briefing) as soon as Wheel shows. */
+    static void queue(int kind) {
+        holdAutoBoot();
+        queued = kind;
+        Runnable r = whileShown;
+        if (r != null) r.run();
+    }
+
     private static long bootAt = -1;      // uptime; -1 = not playing
     private static long briefAt = -1;
     private static float[] pts;
@@ -45,6 +65,7 @@ final class Startup {
     static volatile Runnable whileShown;
 
     static void tvOn() {
+        if (SystemClock.uptimeMillis() < noAutoBootUntil) return;   // a phone command has it
         bootPending = true;
         Runnable r = whileShown;
         if (r != null) r.run();
@@ -52,6 +73,21 @@ final class Startup {
 
     /** Wheel is showing: play the boot if the TV just came on. */
     static void onWheelShown(Context c) {
+        int k = queued;
+        if (k != NONE) {
+            queued = NONE;
+            bootPending = false;
+            if (k == HOME) {
+                // Straight to the briefing, under "WELCOME HOME, OMAR".
+                playBriefing();
+                briefTitle = "WELCOME HOME, " + Config.NAME;
+            } else {
+                // Waking up: the boot, then the briefing (even if it already played today).
+                markBriefed(c);
+                play(true);
+            }
+            return;
+        }
         if (!bootPending) return;
         bootPending = false;
         boolean brief = briefingDue(c);
@@ -61,6 +97,7 @@ final class Startup {
 
     static void play(boolean withBriefing) {
         bootPending = false;   // a demo replaces the automatic one
+        briefTitle = null;
         bootAt = SystemClock.uptimeMillis();
         briefAt = withBriefing ? bootAt + BOOT_MS : -1;
         pts = null;
@@ -68,6 +105,7 @@ final class Startup {
 
     static void playBriefing() {
         bootPending = false;
+        briefTitle = null;
         bootAt = -1;
         briefAt = SystemClock.uptimeMillis();
     }
@@ -209,7 +247,8 @@ final class Startup {
         float lp = p * 0.7f;                        // label pitch
         float r = 0.36f;
 
-        String hello = DotFont.clean(WheelView.greeting(now));   // same as the panel says
+        String bt = briefTitle;
+        String hello = DotFont.clean(bt != null ? bt : WheelView.greeting(now));   // else the panel's greeting
         String date = DotFont.clean(new SimpleDateFormat("EEEE, MMMM d", Locale.US).format(new Date(now)));
         String weather = wheel.weatherNow();
         String range = wheel.weatherRange();

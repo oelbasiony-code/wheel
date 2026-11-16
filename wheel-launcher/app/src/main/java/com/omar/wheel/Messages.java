@@ -187,6 +187,15 @@ final class Messages {
                 JSONObject o = new JSONObject(line);
                 if (!"message".equals(o.optString("event"))) continue;
                 String raw = o.optString("message", "");
+                // A command from the phone ("!home"...), in the text or the title: do it, don't show it.
+                String rawTitle = o.optString("title", "").trim();
+                String cmd = raw.trim().startsWith("!") ? raw.trim()
+                        : rawTitle.startsWith("!") ? rawTitle : null;
+                if (cmd != null) {
+                    p.edit().putString(K_LAST_ID, o.optString("id", since)).apply();
+                    Commands.run(c, cmd.substring(1).trim().toLowerCase(java.util.Locale.US));
+                    continue;
+                }
                 // Emails arrive with line breaks (a body); texts from the phone don't.
                 final boolean mail = raw.indexOf('\n') >= 0;
                 String text = tidy(raw);
@@ -207,6 +216,7 @@ final class Messages {
                         .putBoolean(K_UNREAD_MAIL, mail)
                         .apply();
                 if (clean.isEmpty()) continue;
+                addToHistory(p, clean, mail, nowMs);
                 ui.post(new Runnable() {
                     @Override
                     public void run() {
@@ -235,6 +245,56 @@ final class Messages {
         String text = colon < 0 ? "" : rest.substring(colon + 1).trim();
         String who = name.isEmpty() ? number : name;
         return text.isEmpty() ? who : who + ": " + text;
+    }
+
+    // ---------------------------------------------------------------- the inbox (last 10)
+
+    private static final String K_HISTORY = "msg_history";
+    private static final int HISTORY_MAX = 10;
+
+    static final class Item {
+        final String text;
+        final boolean mail;
+        final long time;
+
+        Item(String text, boolean mail, long time) {
+            this.text = text;
+            this.mail = mail;
+            this.time = time;
+        }
+    }
+
+    private static void addToHistory(SharedPreferences p, String text, boolean mail, long time) {
+        try {
+            org.json.JSONArray old = new org.json.JSONArray(p.getString(K_HISTORY, "[]"));
+            org.json.JSONArray out = new org.json.JSONArray();
+            out.put(new JSONObject().put("x", text).put("m", mail).put("t", time));
+            for (int i = 0; i < old.length() && out.length() < HISTORY_MAX; i++) out.put(old.get(i));
+            p.edit().putString(K_HISTORY, out.toString()).apply();
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Newest first. */
+    static List<Item> history(Context c) {
+        List<Item> out = new ArrayList<>();
+        try {
+            org.json.JSONArray a = new org.json.JSONArray(sp(c).getString(K_HISTORY, "[]"));
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.getJSONObject(i);
+                out.add(new Item(o.optString("x"), o.optBoolean("m"), o.optLong("t")));
+            }
+        } catch (Exception ignored) {
+        }
+        if (out.isEmpty()) {
+            // Before the inbox existed only the newest text and email were kept: show those.
+            SharedPreferences p = sp(c);
+            String m = p.getString(K_TEXT, null), e = p.getString(K_MAIL_TEXT, null);
+            long mt = p.getLong(K_TIME, 0), et = p.getLong(K_MAIL_TIME, 0);
+            if (m != null && !m.isEmpty()) out.add(new Item(m, false, mt));
+            if (e != null && !e.isEmpty()) out.add(et > mt ? 0 : out.size(), new Item(e, true, et));
+        }
+        return out;
     }
 
     private static String lastShown;

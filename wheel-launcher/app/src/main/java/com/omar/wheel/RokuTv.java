@@ -61,6 +61,20 @@ final class RokuTv {
         return "The TV didn't switch (" + code + ")";
     }
 
+    /** Presses a key on the TV ("PowerOn", "PowerOff", "InputHDMI4"...). Off the main thread. */
+    static boolean press(Context ctx, String key) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String ip = Config.ROKU_TV_IP.isEmpty() ? sp.getString(K_IP, "") : Config.ROKU_TV_IP;
+        int code = ip.isEmpty() ? -1 : keypress(ip, key);
+        if (code < 0 && Config.ROKU_TV_IP.isEmpty()) {
+            String found = discover(ctx);
+            if (found == null) return false;
+            sp.edit().putString(K_IP, found).apply();
+            code = keypress(found, key);
+        }
+        return code == 200;
+    }
+
     /** POST /keypress/InputHDMI2 -> HTTP status, or -1 if the TV can't be reached. */
     private static int keypress(String ip, String key) {
         HttpURLConnection c = null;
