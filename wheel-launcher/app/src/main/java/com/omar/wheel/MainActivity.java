@@ -148,6 +148,14 @@ public final class MainActivity extends Activity implements WheelView.Host {
             i.removeExtra("train_demo");
             ambient.demoTrain();
         }
+        if (i.getBooleanExtra("boot_demo", false)) {
+            i.removeExtra("boot_demo");
+            Startup.play(i.getBooleanExtra("briefing", false));
+        }
+        if (i.getBooleanExtra("briefing_demo", false)) {
+            i.removeExtra("briefing_demo");
+            Startup.playBriefing();
+        }
         if (i.getBooleanExtra("idle_demo", false)) {
             i.removeExtra("idle_demo");
             ambient.demoIdle();
@@ -157,6 +165,18 @@ public final class MainActivity extends Activity implements WheelView.Host {
             i.removeExtra("message_topic");
             Messages.setTopic(this, topic);
             toast("Message topic saved");
+        }
+        String goveeIp = i.getStringExtra("govee_ip");
+        if (goveeIp != null) {
+            i.removeExtra("govee_ip");
+            Govee.setIp(this, goveeIp);
+            toast("Light strip address saved");
+        }
+        String goveeKey = i.getStringExtra("govee_key");
+        if (goveeKey != null) {
+            i.removeExtra("govee_key");
+            Govee.setKey(this, goveeKey);
+            toast("Govee key saved");
         }
         String link = i.getStringExtra("calendar_url");
         if (link == null) link = i.getStringExtra("calendar_link");   // older name, same thing
@@ -175,8 +195,11 @@ public final class MainActivity extends Activity implements WheelView.Host {
         super.onResume();
         // Back on Wheel: the Home takeover is always active again.
         HomeWatcher.releaseHold();
+        Govee.untint(this);   // lights back to how they were before the app
         swallowKey = -1;
         ambient.setActive(true);
+        Startup.onWheelShown(this);   // the TV just came on: boot sequence (+ morning briefing)
+        Startup.whileShown = startupNow;
         immersive();
         reload();
         h.removeCallbacks(weatherLoop);
@@ -204,8 +227,21 @@ public final class MainActivity extends Activity implements WheelView.Host {
         }
     };
 
+    private final Runnable startupNow = new Runnable() {
+        @Override
+        public void run() {
+            h.post(new Runnable() {
+                @Override
+                public void run() {
+                    Startup.onWheelShown(MainActivity.this);
+                }
+            });
+        }
+    };
+
     @Override
     protected void onPause() {
+        Startup.whileShown = null;
         onScreen = false;
         Messages.removeListener(onMessage);
         h.removeCallbacks(weatherLoop);
@@ -253,6 +289,14 @@ public final class MainActivity extends Activity implements WheelView.Host {
     public boolean dispatchKeyEvent(KeyEvent e) {
         int act = e.getAction();
         boolean down = act == KeyEvent.ACTION_DOWN;
+        // Startup sequence playing: any button skips it (and does nothing else).
+        if (Startup.showing()) {
+            if (down) {
+                Startup.skip();
+                swallowKey = e.getKeyCode();
+            }
+            return true;
+        }
         // Play/Pause opens the last message big (it's on the card for 2 hours) and closes it.
         int code = e.getKeyCode();
         if (code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || code == KeyEvent.KEYCODE_MEDIA_PLAY
@@ -349,6 +393,7 @@ public final class MainActivity extends Activity implements WheelView.Host {
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         try {
             startActivity(i);
+            Govee.tint(this, Govee.colorFor(e.pkg));   // lights in the app's color
         } catch (Exception ex) {
             toast("Can't open " + e.label);
         }
@@ -357,6 +402,8 @@ public final class MainActivity extends Activity implements WheelView.Host {
     private void runShortcut(String action) {
         if (action.startsWith(AppRepo.TV_INPUT)) {
             final String input = action.substring(AppRepo.TV_INPUT.length());
+            if (Config.PLAYSTATION_INPUT.equals(input)) Govee.tint(this, Govee.PLAYSTATION);
+            else if (Config.XBOX_INPUT.equals(input)) Govee.tint(this, Govee.XBOX);
             RokuTv.switchInput(this, input, new RokuTv.Done() {
                 @Override
                 public void done(final String error) {
@@ -369,6 +416,13 @@ public final class MainActivity extends Activity implements WheelView.Host {
                     });
                 }
             });
+            return;
+        }
+        if (AppRepo.ACTION_LIGHTS.equals(action)) {
+            boolean on = !Govee.followTv(this);
+            Govee.setFollowTv(this, on);
+            toast(on ? "Lights follow the TV" : "Lights left alone when the TV turns on/off");
+            wheel.refresh();
             return;
         }
         if (AppRepo.ACTION_DND.equals(action)) {

@@ -55,6 +55,16 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 - `RokuTv.java`: PLAYSTATION / XBOX tiles switch the TV input over Roku ECP (port 8060).
   PS5 = InputHDMI1, Xbox = InputHDMI2. TV must have Control by mobile apps = Enabled.
 - `HomeWatcher.java`: accessibility service + logcat watcher that sends the Home button to Wheel.
+  Also watches screen on/off (the stick sleeps when the TV turns off) for Govee and Startup.
+- `Govee.java`: the H615C strip. LAN API first (finds the strip by multicast scan, or
+  `--es govee_ip 'IP'`); Govee cloud key as fallback (`--es govee_key 'KEY'`, secret, not in
+  repo). Lights on/off with the TV (tile LIGHTS FOLLOW TV in the all-apps list); opening an app
+  from Wheel fades to its color (PS/Xbox tiles too), back on Wheel it fades back to what it was.
+  Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
+- `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, scan
+  line reveals the wheel) and the morning briefing (first time on before 11 am: weather, first
+  event, next train, typed out). Any button skips. Try it: `--ez boot_demo true` (add
+  `--ez briefing true`), or `--ez briefing_demo true`.
 
 ## Omar's setup (his Mac)
 
@@ -110,7 +120,7 @@ the top.
 
 1. **Messages to the TV**: built (see Messages.java). Left: Omar's iPhone side (Shortcut and/or
    automations for chosen iMessages and Gmail via Apple Mail).
-2. **Govee lights** (next) (model H615C LED strip): (a) lights on when the TV turns on, off when it
+2. **Govee lights** (built, untested until LAN Control is on) (model H615C LED strip): (a) lights on when the TV turns on, off when it
    turns off, with a hidden toggle so Omar can switch this on/off; (b) when a streaming app
    opens, fade the lights to that app's brand color (Netflix red, Disney+ blue...), back to
    normal on Home. Screen-content color matching isn't possible on the stick (DRM blocks capture).
@@ -118,7 +128,7 @@ the top.
    to the light's IP on 4003; needs "LAN Control" on in the Govee Home app). On Nov 16 a scan
    from the Mac got no reply, so LAN Control was probably off. Fall back to the cloud API key.
 
-Queued, don't start until Omar says so:
+Built Nov 16 (Omar said go):
 
 3. **Startup sequence**: when Wheel first appears after the TV turns on, a ~2 s dot-matrix
    boot (dots fly in, "WELCOME BACK, OMAR", wheel builds itself). JARVIS feel.

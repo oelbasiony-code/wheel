@@ -527,6 +527,22 @@ final class WheelView extends View {
     /** Space between the rotating line's text and its card, in dots. */
     static final float TICK_PAD_ROWS = 2.5f;
 
+    // For the morning briefing.
+    String weatherNow() {
+        return weatherNow;
+    }
+
+    String weatherRange() {
+        return weatherRange;
+    }
+
+    /** The first calendar line (label, text), or null. */
+    String[] firstEvent(long now) {
+        if (agenda == null) return null;
+        List<String[]> l = Agenda.lines(agenda, now, TimeZone.getDefault(), 1);
+        return l.isEmpty() ? null : l.get(0);
+    }
+
     /** The next train that hasn't left yet (epoch millis), or 0. */
     long nextTrain(long now) {
         List<Long> t = trains;

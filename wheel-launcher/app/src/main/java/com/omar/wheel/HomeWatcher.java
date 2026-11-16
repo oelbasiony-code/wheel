@@ -82,12 +82,38 @@ public final class HomeWatcher extends AccessibilityService {
         // Messages to the TV: listen all the time, so they arrive during shows too.
         Messages.addListener(onMessage);
         Messages.start(this);
+        // The Govee strip follows the TV: the stick sleeps when the TV turns off.
+        android.content.IntentFilter f = new android.content.IntentFilter();
+        f.addAction(Intent.ACTION_SCREEN_ON);
+        f.addAction(Intent.ACTION_SCREEN_OFF);
+        registerReceiver(screen, f);
+        screenWatch = true;
     }
+
+    private boolean screenWatch;
+    private final android.content.BroadcastReceiver screen = new android.content.BroadcastReceiver() {
+        @Override
+        public void onReceive(android.content.Context c, Intent i) {
+            if (Intent.ACTION_SCREEN_ON.equals(i.getAction())) {
+                Govee.tvOn(c);
+                Startup.tvOn();   // the boot sequence plays next time Wheel shows
+            } else if (Intent.ACTION_SCREEN_OFF.equals(i.getAction())) {
+                Govee.tvOff(c);
+            }
+        }
+    };
 
     @Override
     public void onDestroy() {
         stopLogWatch();
         Messages.removeListener(onMessage);
+        if (screenWatch) {
+            try {
+                unregisterReceiver(screen);
+            } catch (Exception ignored) {
+            }
+            screenWatch = false;
+        }
         removeOverlay();
         if (instance == this) instance = null;
         super.onDestroy();

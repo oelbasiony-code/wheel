@@ -207,5 +207,34 @@ final class DotFont {
         return cx - x;
     }
 
+    /**
+     * Every dot of a string as (column, row) pairs in dot units, left to right, for
+     * animating the dots one by one (the startup sequence flies them in).
+     */
+    static float[] points(String s) {
+        java.util.ArrayList<Float> out = new java.util.ArrayList<>();
+        int cx = 0;
+        boolean first = true;
+        for (int i = 0; i < s.length(); i++) {
+            int[] d = glyph(s.charAt(i));
+            if (d == null) continue;
+            if (!first) cx += 1;
+            first = false;
+            int w = d[0];
+            for (int c = 0; c < w; c++) {
+                for (int row = 0; row < 7; row++) {
+                    if ((d[row + 1] & (1 << c)) != 0) {
+                        out.add((float) (cx + c));
+                        out.add((float) row);
+                    }
+                }
+            }
+            cx += w;
+        }
+        float[] a = new float[out.size()];
+        for (int i = 0; i < a.length; i++) a[i] = out.get(i);
+        return a;
+    }
+
     private DotFont() {}
 }

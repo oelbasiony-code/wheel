@@ -431,6 +431,11 @@ final class AmbientView extends View {
         if (t >= 0) drawTrain(c, now, t, trackY, tp, normal + idle * IDLE_BRIGHTNESS);
         if (message != null) drawMessage(c, now);
         else if (banner != null) drawBanner(c);
+        // The startup sequence / morning briefing goes over everything.
+        if (Startup.showing()) {
+            lastInput = up;   // no idle mode while it plays
+            Startup.draw(c, dot, getWidth(), h, wheel);
+        }
     }
 
     /**
