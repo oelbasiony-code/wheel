@@ -12,7 +12,7 @@ final class TrainDoodle {
 
     static final long PASS_MS = 15000;              // one trip across the screen
     static final long EVERY_MS = 5 * 60 * 1000L;    // a pass every 5 minutes...
-    static final long WINDOW_MS = 30 * 60 * 1000L;  // ...in the 30 minutes before departure
+    static final long WINDOW_MS = 60 * 60 * 1000L;  // ...in the hour before departure
 
     private static final int PURPLE = 0xFF9C3F8C;   // body (brighter than the real paint, for a black screen)
     private static final int STRIPE = 0xFFC583BC;   // same purple as TRAIN on the rotating line
