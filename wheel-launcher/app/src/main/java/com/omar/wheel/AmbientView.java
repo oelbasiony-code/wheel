@@ -603,10 +603,16 @@ final class AmbientView extends View {
     private android.media.MediaPlayer whistle;
     private long whistledFor;   // the pass that already whistled (its start time)
 
+    private long leftFor;       // the pass that already whistled leaving
+
+    /** "Woo wooooo" as a whistling pass comes in, and again as it leaves. */
     private void maybeWhistle(long now, float t) {
-        if (!Config.TRAIN_SOUND || t > 0.1f) return;
+        if (!Config.TRAIN_SOUND) return;
         long passStart = now - (long) (t * TrainDoodle.PASS_MS);
-        if (Math.abs(passStart - whistledFor) < 2000) return;
+        boolean arriving = t < 0.1f, leaving = t > 0.72f && t < 0.82f;
+        if (!arriving && !leaving) return;
+        if (arriving && Math.abs(passStart - whistledFor) < 2000) return;
+        if (leaving && Math.abs(passStart - leftFor) < 2000) return;
         boolean play;
         if (demoTrain > 0) {
             play = true;
@@ -616,7 +622,8 @@ final class AmbientView extends View {
             play = until > TrainDoodle.WINDOW_MS - TrainDoodle.EVERY_MS            // first pass
                     || until < TrainDoodle.EVERY_MS + TrainDoodle.PASS_MS;         // last pass
         }
-        whistledFor = passStart;
+        if (arriving) whistledFor = passStart;
+        else leftFor = passStart;
         if (!play) return;
         try {
             if (whistle == null) {
