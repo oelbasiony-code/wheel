@@ -183,58 +183,74 @@ final class Startup {
 
     private static void drawBriefing(Canvas c, Paint dot, float w, float h, long t, WheelView wheel) {
         float in = ease(t / (float) BRIEF_IN_MS);
-        float out = t > BRIEF_MS ? 1f - (t - BRIEF_MS) / (float) BRIEF_OUT_MS : 1f;
-        float a = Math.min(in, out);
-        dot.setColor(alpha(0xF2000000, a));
+        float out = t > BRIEF_MS ? ease((t - BRIEF_MS) / (float) BRIEF_OUT_MS) : 0f;
+        float bg = in * (1f - out);
+        dot.setColor(alpha(0xFA000000, bg));
         c.drawRect(0, 0, w, h, dot);
 
         long now = System.currentTimeMillis();
         TimeZone tz = TimeZone.getDefault();
-        float p = h / 140f;                         // body text pitch
-        float big = h / 70f;                        // greeting pitch
-        float x = w * 0.16f;
-        float y = h * 0.22f;
+        float p = h / 150f;                         // body text pitch
+        float big = h / 95f;                        // greeting pitch
+        float lp = p * 0.7f;                        // label pitch
         float r = 0.36f;
 
         String hello = "GOOD MORNING, " + Config.NAME;
-        DotFont.draw(c, hello, x, y, big, big * r, dot, new int[]{CREAM}, a);
-        y += 7 * big + p * 4;
-        String date = DotFont.clean(new SimpleDateFormat("EEEE MMMM d", Locale.US).format(new Date(now)));
-        DotFont.draw(c, date, x, y, p, p * r, dot, new int[]{DIM}, a);
-        y += 7 * p + p * 12;
-
+        String date = DotFont.clean(new SimpleDateFormat("EEEE, MMMM d", Locale.US).format(new Date(now)));
         String weather = wheel.weatherNow();
         String range = wheel.weatherRange();
-        String wLine = weather == null ? "LOADING" : weather + (range != null ? "   " + range : "");
+        String wLine = weather == null ? "LOADING" : weather + (range != null ? "  " + range : "");
         String[] ev = wheel.firstEvent(now);
-        String eLine = ev == null ? "NOTHING ON THE CALENDAR" : ev[0] + "  " + ev[1];
+        String eLine = ev == null ? "NOTHING ON THE CALENDAR" : ev[0] + " " + ev[1];
         long train = wheel.nextTrain(now);
-        String tLine = train <= 0 ? "NO TRAINS SOON" : Agenda.clock(train, tz) + "  TO " + Config.TRAIN_TO;
-
-        String[][] rows = {
-                {"WEATHER", wLine},
-                {"FIRST UP", eLine},
-                {"NEXT TRAIN", tLine},
-        };
+        String tLine = train <= 0 ? "NO TRAINS SOON" : Agenda.clock(train, tz) + " TO " + Config.TRAIN_TO;
+        String[] labels = {"WEATHER", "FIRST UP", "NEXT TRAIN"};
+        String[] vals = {DotFont.clean(wLine), DotFont.clean(eLine), DotFont.clean(tLine)};
         int[] labelColors = {BLUE, CREAM, GOLD};
-        float labelW = DotFont.cols("NEXT TRAIN") * p * 0.7f + p * 6;
-        for (int i = 0; i < rows.length; i++) {
-            // Each line types itself out, a moment after the one above.
-            long start = 700 + i * 650L;
-            if (t < start) break;
-            String val = DotFont.clean(rows[i][1]);
-            int chars = (int) Math.min(val.length(), (t - start) / 28);
-            float lp = p * 0.7f;
-            DotFont.draw(c, rows[i][0], x, y + (7 * p - 7 * lp) / 2f, lp, lp * r, dot,
-                    new int[]{labelColors[i]}, a);
-            DotFont.draw(c, val.substring(0, chars), x + labelW, y, p, p * r, dot, new int[]{CREAM}, a);
-            if (chars < val.length() && (t / 120) % 2 == 0) {
-                // Typing cursor.
-                float cx = x + labelW + DotFont.cols(val.substring(0, chars)) * p + p;
-                dot.setColor(alpha(TEAL, a));
-                for (int k = 0; k < 7; k++) c.drawCircle(cx + p / 2, y + k * p + p / 2, p * r, dot);
+
+        // Lay the whole thing out as one block, centered on screen.
+        float labelW = DotFont.cols("NEXT TRAIN") * lp + p * 6;
+        float rowsW = 0;
+        for (String v : vals) rowsW = Math.max(rowsW, labelW + DotFont.cols(v) * p);
+        float helloW = DotFont.cols(hello) * big, dateW = DotFont.cols(date) * p;
+        float blockW = Math.max(helloW, rowsW);
+        float rowH = 7 * p, rowGap = p * 7;
+        float blockH = 7 * big + p * 5 + 7 * p + p * 14 + 3 * rowH + 2 * rowGap;
+        float top = (h - blockH) / 2f;
+        float left = (w - blockW) / 2f;
+
+        // Everything glides up a little as it fades in, one piece after another,
+        // and drifts up as the briefing leaves.
+        float lift = p * 6;
+        float leave = out * p * 10;
+
+        float k = ease((t - 150) / 700f) * (1f - out);
+        float y = top + (1f - k) * lift - leave;
+        DotFont.draw(c, hello, (w - helloW) / 2f, y, big, big * r, dot, new int[]{CREAM}, k);
+        y += 7 * big + p * 5;
+        k = ease((t - 450) / 700f) * (1f - out);
+        DotFont.draw(c, date, (w - dateW) / 2f, y + (1f - k) * lift - leave, p, p * r, dot,
+                new int[]{DIM}, k);
+        y = top + 7 * big + p * 5 + 7 * p + p * 14;
+
+        // A faint dotted rule between the greeting and the rows.
+        float rk = ease((t - 700) / 900f) * (1f - out);
+        float ruleY = y - p * 7 - leave;
+        float half = blockW / 2f * rk;
+        dot.setColor(alpha(0xFF3A3834, rk));
+        for (float x = w / 2f - half; x <= w / 2f + half; x += p * 1.6f) {
+            c.drawCircle(x, ruleY, p * 0.3f, dot);
+        }
+
+        for (int i = 0; i < 3; i++) {
+            k = ease((t - 900 - i * 350L) / 700f) * (1f - out);
+            if (k > 0f) {
+                float ry = y + (1f - k) * lift - leave;
+                DotFont.draw(c, labels[i], left, ry + (rowH - 7 * lp) / 2f, lp, lp * r, dot,
+                        new int[]{labelColors[i]}, k);
+                DotFont.draw(c, vals[i], left + labelW, ry, p, p * r, dot, new int[]{CREAM}, k);
             }
-            y += 7 * p + p * 7;
+            y += rowH + rowGap;
         }
     }
 

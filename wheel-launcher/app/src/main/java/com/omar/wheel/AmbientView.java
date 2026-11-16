@@ -91,7 +91,8 @@ final class AmbientView extends View {
         public void run() {
             if (!active) return;
             invalidate();
-            postDelayed(this, FRAME_MS);
+            // Smoother (~60 fps) only while the startup sequence plays.
+            postDelayed(this, Startup.showing() ? 16 : FRAME_MS);
         }
     };
 
