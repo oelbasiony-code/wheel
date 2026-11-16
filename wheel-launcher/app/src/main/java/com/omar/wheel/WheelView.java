@@ -84,6 +84,9 @@ final class WheelView extends View {
         setFocusable(true);
         setFocusableInTouchMode(true);
         dot.setStyle(Paint.Style.FILL);
+        // Keep the drawn wheel as a picture on the GPU: it only changes once a second,
+        // so the animated layer on top (AmbientView) doesn't make it redraw every frame.
+        setLayerType(LAYER_TYPE_HARDWARE, null);
     }
 
     // ---------------------------------------------------------------- data
