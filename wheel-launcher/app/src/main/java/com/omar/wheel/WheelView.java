@@ -511,8 +511,9 @@ final class WheelView extends View {
         tickPitch = h / 250f;
         tickX = px;
         tickW = pw;
-        tickTop = panelTop - h * 0.024f - 7 * tickPitch;
-        dinoBottom = tickTop - h * 0.014f;
+        tickTop = panelTop - h * 0.03f - 7 * tickPitch;
+        // The dino walks on top of the rotating line's card.
+        dinoBottom = tickTop - TICK_PAD_ROWS * tickPitch - h * 0.012f;
     }
 
     void setWeatherExtra(Weather.Extra x) {
@@ -521,6 +522,17 @@ final class WheelView extends View {
 
     void setTrains(List<Long> t) {
         trains = t;
+    }
+
+    /** Space between the rotating line's text and its card, in dots. */
+    static final float TICK_PAD_ROWS = 2.5f;
+
+    /** The next train that hasn't left yet (epoch millis), or 0. */
+    long nextTrain(long now) {
+        List<Long> t = trains;
+        if (t == null) return 0;
+        for (long d : t) if (d > now) return d;
+        return 0;
     }
 
     /** One message on the rotating line. */

@@ -123,6 +123,21 @@ public final class MainActivity extends Activity implements WheelView.Host {
         root.addView(ambient);
         setContentView(root);
         wheel.requestFocus();
+        checkDemo(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(android.content.Intent i) {
+        super.onNewIntent(i);
+        checkDemo(i);
+    }
+
+    /** `am start ... --ez train_demo true` sends a train across right away, to try it out. */
+    private void checkDemo(android.content.Intent i) {
+        if (i != null && i.getBooleanExtra("train_demo", false)) {
+            i.removeExtra("train_demo");
+            ambient.demoTrain();
+        }
     }
 
     @Override

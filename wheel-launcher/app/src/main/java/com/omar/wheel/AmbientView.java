@@ -39,11 +39,18 @@ final class AmbientView extends View {
     private float idle;          // 0 = normal, 1 = fully in idle mode
     private boolean waking;
 
-    // The rotating line: which message, and since when.
+    // The rotating line: which message, and since when. Messages slide up into place,
+    // like a Smart Stack on an iPhone.
     private static final long TICK_MS = 7000;
-    private static final long TICK_FADE_MS = 350;
-    private int tickIdx;
-    private long tickSince;
+    private static final long SLIDE_MS = 450;
+    private int tickIdx, prevIdx;
+    private long tickSince, slideStart;
+    private int slideDir = 1;      // 1 = new message comes up from below, -1 = from above
+
+    private static final int CARD = 0xFF3A3834;
+
+    // A train pass started by hand (for trying it out), 0 if none.
+    private long demoTrain;
 
     private final Runnable frame = new Runnable() {
         @Override
@@ -78,48 +85,120 @@ final class AmbientView extends View {
 
     /** Left/right on the remote flips the rotating line. */
     void stepTicker(int dir) {
+        long now = System.currentTimeMillis();
+        prevIdx = tickIdx;
         tickIdx += dir;
-        tickSince = System.currentTimeMillis();
+        tickSince = now;
+        slideStart = now;
+        slideDir = dir;
         invalidate();
     }
 
-    /** The message to show now and how visible it is (fades between messages). */
-    private WheelView.Tick currentTick(long now, float[] alphaOut) {
-        java.util.List<WheelView.Tick> items = wheel.tickerItems(now);
-        if (items.isEmpty()) return null;
-        if (tickSince == 0) tickSince = now;
-        int n = items.size();
-        if (n > 1 && now - tickSince >= TICK_MS) {
-            tickIdx++;
-            tickSince = now;
-        }
-        long t = now - tickSince;
-        float a = n == 1 ? 1f : Math.min(1f, t / (float) TICK_FADE_MS)
-                * Math.min(1f, Math.max(0f, (TICK_MS - t) / (float) TICK_FADE_MS));
-        alphaOut[0] = a;
-        alphaOut[1] = ((tickIdx % n) + n) % n;
-        alphaOut[2] = n;
-        return items.get((int) alphaOut[1]);
+    /** Send one train across the screen right now, whatever the timetable says. */
+    void demoTrain() {
+        demoTrain = System.currentTimeMillis();
     }
 
-    private final float[] tickInfo = new float[3];
+    /** Moves the rotating line on every TICK_MS. */
+    private void advanceTicker(long now, int n) {
+        if (tickSince == 0) tickSince = now;
+        if (n > 1 && now - tickSince >= TICK_MS) {
+            prevIdx = tickIdx;
+            tickIdx++;
+            tickSince = now;
+            slideStart = now;
+            slideDir = 1;
+        }
+    }
 
-    /** Label in its color, then the message; small position dots when there are several. */
-    private void drawTick(Canvas c, WheelView.Tick k, float x, float top, float p, float width,
-                          float alpha, int index, int count, boolean dotsRight) {
-        int[] lc = {k.color};
-        float lw = DotFont.draw(c, k.label, x, top, p, p * 0.36f, dot, lc, alpha);
-        float dotsW = count > 1 ? count * p * 3f : 0;
-        int room = (int) ((width - lw - dotsW) / p) - 6;
-        String text = WheelView.fit(k.text, Math.max(4, room));
-        float tw = DotFont.draw(c, text, x + lw + p * 3, top, p, p * 0.36f, dot, DIM, alpha);
-        if (count > 1) {
-            float dx = dotsRight ? x + width - dotsW : x + lw + p * 3 + tw + p * 4;
-            for (int i = 0; i < count; i++) {
-                dot.setColor(Doodles.withAlpha(i == index ? 0xFFA9A398 : 0xFF3A3834, 1f));
-                c.drawCircle(dx + i * p * 3f + p, top + 3.5f * p, p * 0.5f, dot);
+    private static int wrap(int i, int n) {
+        return ((i % n) + n) % n;
+    }
+
+    /**
+     * The rotating line in its card: a faint dotted rounded box, the message sliding
+     * into place, and position dots stacked on the right.
+     */
+    private void drawTicker(Canvas c, java.util.List<WheelView.Tick> items, long now,
+                            float x, float top, float p, float width, float alpha) {
+        int n = items.size();
+        if (n == 0 || alpha <= 0.01f) return;
+        advanceTicker(now, n);
+
+        float pad = WheelView.TICK_PAD_ROWS * p;
+        float cardTop = top - pad, cardH = 7 * p + 2 * pad;
+        drawCard(c, x, cardTop, width, cardH, p, alpha);
+
+        float textX = x + p * 3.5f;
+        float dotsW = n > 1 ? p * 4.5f : 0;
+        float room = width - p * 7f - dotsW;
+
+        int cur = wrap(tickIdx, n);
+        float k = slideStart == 0 ? 1f : Math.min(1f, (now - slideStart) / (float) SLIDE_MS);
+        float e = 1f - (1f - k) * (1f - k) * (1f - k);   // ease out
+        if (k < 1f) {
+            // Only the inside of the card shows the sliding text.
+            c.save();
+            c.clipRect(x + p, cardTop + p * 0.8f, x + width - p, cardTop + cardH - p * 0.8f);
+            float shift = cardH * slideDir;
+            drawTick(c, items.get(wrap(prevIdx, n)), textX, top - e * shift, p, room, alpha);
+            drawTick(c, items.get(cur), textX, top + (1f - e) * shift, p, room, alpha);
+            c.restore();
+        } else {
+            drawTick(c, items.get(cur), textX, top, p, room, alpha);
+        }
+
+        if (n > 1) {
+            // Position dots, top to bottom, just inside the card's right edge.
+            float gap = n > 4 ? p * 2f : p * 2.4f;
+            float dx = x + width - p * 3f;
+            float dy = cardTop + cardH / 2f - (n - 1) * gap / 2f;
+            for (int i = 0; i < n; i++) {
+                dot.setColor(Doodles.withAlpha(i == cur ? 0xFFA9A398 : CARD, alpha));
+                c.drawCircle(dx, dy + i * gap, p * 0.5f, dot);
             }
         }
+    }
+
+    /** A rounded rectangle traced in faint dots. */
+    private void drawCard(Canvas c, float x, float y, float w, float h, float p, float alpha) {
+        dot.setColor(Doodles.withAlpha(CARD, alpha));
+        float r = p * 0.32f;
+        float step = p * 1.6f;
+        float rr = p * 3f;                     // corner radius
+        // Straight edges.
+        int nx = Math.max(1, Math.round((w - 2 * rr) / step));
+        for (int i = 0; i <= nx; i++) {
+            float xx = x + rr + (w - 2 * rr) * i / nx;
+            c.drawCircle(xx, y, r, dot);
+            c.drawCircle(xx, y + h, r, dot);
+        }
+        int ny = Math.max(1, Math.round((h - 2 * rr) / step));
+        for (int i = 0; i <= ny; i++) {
+            float yy = y + rr + (h - 2 * rr) * i / ny;
+            c.drawCircle(x, yy, r, dot);
+            c.drawCircle(x + w, yy, r, dot);
+        }
+        // Corners: quarter circles, spaced about the same as the edges.
+        int na = Math.max(2, Math.round((float) (Math.PI / 2 * rr / step)));
+        for (int i = 1; i < na; i++) {
+            double a = Math.PI / 2 * i / na;
+            float ox = rr - (float) Math.cos(a) * rr, oy = rr - (float) Math.sin(a) * rr;
+            c.drawCircle(x + ox, y + oy, r, dot);
+            c.drawCircle(x + w - ox, y + oy, r, dot);
+            c.drawCircle(x + ox, y + h - oy, r, dot);
+            c.drawCircle(x + w - ox, y + h - oy, r, dot);
+        }
+    }
+
+    /** Label in its color, then the message, trimmed to fit `room` px. */
+    private void drawTick(Canvas c, WheelView.Tick k, float x, float top, float p, float room,
+                          float alpha) {
+        int[] lc = {k.color};
+        float lw = DotFont.draw(c, k.label, x, top, p, p * 0.36f, dot, lc, alpha);
+        int cols = (int) ((room - lw) / p) - 3;
+        String text = WheelView.fit(k.text, Math.max(4, cols));
+        DotFont.draw(c, text, x + lw + p * 3, top, p, p * 0.36f, dot, DIM, alpha);
     }
 
     boolean isIdle() {
@@ -160,17 +239,39 @@ final class AmbientView extends View {
                     wheel.dateTop + wheel.datePitch * 3.5f, wheel.datePitch * 8f, now, normal);
             Doodles.drawWeather(c, dot, wheel.iconX, wheel.iconTop, wheel.iconPitch,
                     wheel.weatherCode(), wheel.weatherDay(), now, normal);
-            WheelView.Tick k = currentTick(now, tickInfo);
-            if (k != null) {
-                drawTick(c, k, wheel.tickX, wheel.tickTop, wheel.tickPitch, wheel.tickW,
-                        normal * tickInfo[0], (int) tickInfo[1], (int) tickInfo[2], true);
-            }
+            drawTicker(c, wheel.tickerItems(now), now, wheel.tickX, wheel.tickTop,
+                    wheel.tickPitch, wheel.tickW, normal);
         }
         if (idle > 0.01f) {
             c.drawColor(Doodles.withAlpha(0xFF000000, idle));
             Season.drawEffect(c, dot, theme.fx, getWidth(), h, now, idle * IDLE_BRIGHTNESS);
             drawIdle(c, now, idle * IDLE_BRIGHTNESS, theme);
         }
+        drawTrain(c, now, normal + idle * IDLE_BRIGHTNESS);
+    }
+
+    /** The commuter rail train along the bottom, in the half hour before it leaves. */
+    private void drawTrain(Canvas c, long now, float alpha) {
+        if (!Config.TRAIN) return;
+        long dep = wheel.nextTrain(now);
+        float t;
+        if (demoTrain > 0) {
+            t = (now - demoTrain) / (float) TrainDoodle.PASS_MS;
+            if (t >= 1f) {
+                demoTrain = 0;
+                return;
+            }
+        } else {
+            t = TrainDoodle.progress(now, dep);
+        }
+        if (t < 0) return;
+        String label = "TO " + Config.TRAIN_TO;
+        if (dep > 0) {
+            hm.setTimeZone(TimeZone.getDefault());
+            label = hm.format(new Date(dep)) + " " + label;
+        }
+        float h = getHeight();
+        TrainDoodle.draw(c, dot, getWidth(), h * 0.96f, h / 190f, t, label, alpha);
     }
 
     /** A big clock centered on the screen, with the dino walking on top. */
@@ -195,9 +296,9 @@ final class AmbientView extends View {
         float clockW = DotFont.cols(time) * cp + cp * 1.5f + DotFont.cols(ap) * sp;
         float wxW = wx == null ? 0 : DotFont.cols(wx) * dp + dp * 3 + Doodles.ICON_COLS * iconP;
         float blockW = Math.max(clockW, Math.max(DotFont.cols(date) * dp, wxW));
-        WheelView.Tick tick = currentTick(now, tickInfo);
+        java.util.List<WheelView.Tick> ticks = wheel.tickerItems(now);
         float calP = h / 170f;
-        float calH = tick == null ? 0 : h * 0.045f + 7 * calP;
+        float calH = ticks.isEmpty() ? 0 : h * 0.045f + 7 * calP;
         float dinoH = Doodles.DINO_ROWS * dinoP;
         float blockH = dinoH + h * 0.02f + 7 * cp + h * 0.04f + 7 * dp
                 + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP) + calH;
@@ -230,10 +331,9 @@ final class AmbientView extends View {
                     wheel.weatherCode(), wheel.weatherDay(), now, alpha);
             y += Doodles.ICON_ROWS * iconP;
         }
-        if (tick != null) {
-            // The rotating line under the weather.
-            drawTick(c, tick, x, y + h * 0.045f, calP, Math.max(blockW, w * 0.4f),
-                    alpha * tickInfo[0], (int) tickInfo[1], (int) tickInfo[2], false);
+        if (!ticks.isEmpty()) {
+            // The rotating line under the weather, in its card.
+            drawTicker(c, ticks, now, x, y + h * 0.045f, calP, Math.max(blockW, w * 0.4f), alpha);
         }
     }
 }
