@@ -29,6 +29,19 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 - `TrainDoodle.java`: the dot-matrix commuter rail train along the bottom.
 - `News.java`: NYT headlines from the public RSS feed (no key) for the bottom ticker.
 - `Words.java`: built-in word of the day (just the word, no definition).
+- `Messages.java`: messages to the TV over ntfy.sh (no account). Wheel keeps a connection open
+  to a private topic (random name, works like a password, NOT in the repo), set with
+  `./adb shell "am start -n com.omar.wheel/.MainActivity --es message_topic 'TOPIC'"` and saved
+  in SharedPreferences. The listener runs inside HomeWatcher so it works during shows.
+  Anything posted to https://ntfy.sh/TOPIC shows up. It is NOT connected to iMessage, Gmail or
+  iPhone notifications (Apple blocks reading notifications). Planned feeds into the topic:
+  iPhone Shortcuts automations (Message / Email triggers) and maybe a Gmail Apps Script.
+- `MessageOverlay.java`: the banner over other apps (top-right, 10 s, like a phone notification).
+  On Wheel the message pops up big in the middle for 10 s (any button closes it). Either way it
+  stays on the card as MSG for 2 hours. Do Not Disturb (tile in the all-apps list, ☰ on Wheel):
+  no banners over shows; the message pops up when you're back on Wheel.
+  Don't rely on catching remote keys in HomeWatcher: on this stick key filtering didn't reach
+  the service reliably, and Back always reaches the app anyway.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
 - `Weather.java`: Open-Meteo (no key).
 - `RokuTv.java`: PLAYSTATION / XBOX tiles switch the TV input over Roku ECP (port 8060).
@@ -87,9 +100,9 @@ the top.
 
 ## Next up (Omar's picks, in order)
 
-1. **Messages to the TV** (next): a phone Shortcut sends text that pops up in dots (free push
-   service such as ntfy.sh, topic name kept off the public repo like the calendar link).
-2. **Govee lights** (model H615C LED strip): (a) lights on when the TV turns on, off when it
+1. **Messages to the TV**: built (see Messages.java). Left: Omar's iPhone side (Shortcut and/or
+   automations for chosen iMessages/emails), maybe a Gmail Apps Script for school emails.
+2. **Govee lights** (next) (model H615C LED strip): (a) lights on when the TV turns on, off when it
    turns off, with a hidden toggle so Omar can switch this on/off; (b) when a streaming app
    opens, fade the lights to that app's brand color (Netflix red, Disney+ blue...), back to
    normal on Home. Screen-content color matching isn't possible on the stick (DRM blocks capture).
