@@ -547,7 +547,7 @@ final class WheelView extends View {
         }
     }
 
-    static final int TICK_CAL = 0xFFEDE6DA, TICK_TRAIN = 0xFFC583BC, TICK_RAIN = 0xFF8FB8DE;
+    static final int TICK_CAL = 0xFFEDE6DA, TICK_FACT = 0xFFE8C872, TICK_RAIN = 0xFF8FB8DE;
 
     /** Everything the rotating line cycles through right now. */
     List<Tick> tickerItems(long now) {
@@ -556,29 +556,8 @@ final class WheelView extends View {
         for (String[] l : Agenda.lines(agenda, now, tz, 3)) out.add(new Tick(l[0], l[1], TICK_CAL));
         if (noCalendarLink) out.add(new Tick("CAL", "NO LINK YET", TICK_CAL));
 
-        if (trains != null) {
-            StringBuilder b = new StringBuilder();
-            int n = 0;
-            for (long t : trains) {
-                if (t < now - 60000L || t > now + 3 * 3600000L) continue;
-                if (n == 2) break;
-                long mins = (t - now) / 60000L;
-                // The very next train in minutes when it's close, then clock times.
-                String when = n == 0 && mins < 60 ? (mins <= 0 ? "NOW" : "IN " + mins + " MIN")
-                        : Agenda.clock(t, tz);
-                b.append(n == 0 ? "" : "   ").append(when);
-                n++;
-            }
-            if (n == 0) {
-                // Nothing in the next 3 hours (late at night): just the next one.
-                long t = nextTrain(now);
-                if (t > 0) {
-                    b.append("NEXT ").append(Agenda.clock(t, tz));
-                    n = 1;
-                }
-            }
-            if (n > 0) out.add(new Tick("TRAIN", b.toString(), TICK_TRAIN));
-        }
+        // The next train isn't on the card: the train itself rolls by before it leaves.
+        out.add(new Tick("FACT", Facts.today(now, tz), TICK_FACT));
 
         Weather.Extra x = weatherExtra;
         if (x != null) {

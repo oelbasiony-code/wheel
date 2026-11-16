@@ -87,11 +87,12 @@ final class TrainDoodle {
         smoke(c, p, t, w, len, pitch, top, alpha);
 
         if (label != null) {
-            // The time rides along above the coaches.
-            float lp = pitch * 0.8f;
+            // Small, centered over the whole train, just above the smoke.
+            float lp = pitch * 0.55f;
             float lw = DotFont.cols(label) * lp;
-            float lx = x + (COACHES * (COACH[0].length() + GAP) * pitch - lw) / 2f;
-            DotFont.draw(c, label, lx, top - lp * 10.5f, lp, lp * 0.36f, p, new int[]{STRIPE}, alpha);
+            float lx = x + (len - lw) / 2f;
+            float ly = top - pitch * 3.8f - 7 * lp;
+            DotFont.draw(c, label, lx, ly, lp, lp * 0.38f, p, new int[]{STRIPE}, alpha);
         }
     }
 

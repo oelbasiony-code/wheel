@@ -54,7 +54,8 @@ final class AmbientView extends View {
 
     // NYT headlines for idle mode's ticker, refreshed every 15 minutes while Wheel is up.
     private static final long NEWS_EVERY_MS = 15 * 60 * 1000L;
-    private static final float NEWS_DOTS_PER_SEC = 14f;
+    private static final float NEWS_DOTS_PER_SEC = 12f;
+    private static final float NEWS_MAIN_BRIGHTNESS = 0.45f;
     private static final int[] NYT_LABEL = {0xFFEDE6DA};
     private java.util.List<String> news;
     private long lastNews;
@@ -141,10 +142,10 @@ final class AmbientView extends View {
         demoTrain = System.currentTimeMillis();
     }
 
-    /** Moves the rotating line on every TICK_MS. */
-    private void advanceTicker(long now, int n) {
+    /** Moves the rotating line on once the current message has had its time (dwellMs). */
+    private void advanceTicker(long now, int n, long dwellMs) {
         if (tickSince == 0) tickSince = now;
-        if (n > 1 && now - tickSince >= TICK_MS) {
+        if (n > 1 && now - tickSince >= dwellMs) {
             prevIdx = tickIdx;
             tickIdx++;
             tickSince = now;
@@ -157,6 +158,17 @@ final class AmbientView extends View {
         return ((i % n) + n) % n;
     }
 
+    // Long messages (a fun fact, a long event name) scroll sideways inside the card.
+    private static final float SCROLL_DOTS_PER_SEC = 12f;
+    private static final long SCROLL_WAIT_MS = 1500;   // read the start first
+    private static final long SCROLL_HOLD_MS = 2200;   // and the end
+
+    /** How far (px) a message's text runs past the room it has. */
+    private static float overflow(WheelView.Tick k, float p, float room) {
+        float textRoom = room - DotFont.cols(k.label) * p - p * 5;
+        return Math.max(0f, DotFont.cols(k.text) * p - textRoom);
+    }
+
     /**
      * The rotating line in its card: a faint dotted rounded box, the message sliding
      * into place, and position dots stacked on the right.
@@ -165,17 +177,31 @@ final class AmbientView extends View {
                             float x, float top, float p, float width, float alpha) {
         int n = items.size();
         if (n == 0 || alpha <= 0.01f) return;
-        advanceTicker(now, n);
 
         float pad = WheelView.TICK_PAD_ROWS * p;
         float cardTop = top - pad, cardH = 7 * p + 2 * pad;
-        drawCard(c, x, cardTop, width, cardH, p, alpha);
-
         float textX = x + p * 3.5f;
         float dotsW = n > 1 ? p * 4.5f : 0;
         float room = width - p * 7f - dotsW;
+        float pxPerMs = SCROLL_DOTS_PER_SEC * p / 1000f;
 
+        WheelView.Tick curK = items.get(wrap(tickIdx, n));
+        float over = overflow(curK, p, room);
+        long dwell = over <= 0 ? TICK_MS
+                : Math.max(TICK_MS, SLIDE_MS + SCROLL_WAIT_MS + (long) (over / pxPerMs) + SCROLL_HOLD_MS);
+        advanceTicker(now, n, dwell);
         int cur = wrap(tickIdx, n);
+        curK = items.get(cur);
+        over = overflow(curK, p, room);
+        long t = now - tickSince - SLIDE_MS - SCROLL_WAIT_MS;
+        float scroll = n == 1 && over > 0
+                // Only message: scroll, hold, jump back, repeat.
+                ? Math.max(0f, Math.min(over, ((now - tickSince) % (long) (SCROLL_WAIT_MS
+                        + over / pxPerMs + SCROLL_HOLD_MS) - SCROLL_WAIT_MS) * pxPerMs))
+                : Math.max(0f, Math.min(over, t * pxPerMs));
+
+        drawCard(c, x, cardTop, width, cardH, p, alpha);
+
         float k = slideStart == 0 ? 1f : Math.min(1f, (now - slideStart) / (float) SLIDE_MS);
         float e = 1f - (1f - k) * (1f - k) * (1f - k);   // ease out
         if (k < 1f) {
@@ -183,11 +209,13 @@ final class AmbientView extends View {
             c.save();
             c.clipRect(x + p, cardTop + p * 0.8f, x + width - p, cardTop + cardH - p * 0.8f);
             float shift = cardH * slideDir;
-            drawTick(c, items.get(wrap(prevIdx, n)), textX, top - e * shift, p, room, alpha);
-            drawTick(c, items.get(cur), textX, top + (1f - e) * shift, p, room, alpha);
+            WheelView.Tick prevK = items.get(wrap(prevIdx, n));
+            // The old message leaves from where it finished (scrolled to its end).
+            drawTick(c, prevK, textX, top - e * shift, p, room, overflow(prevK, p, room), alpha);
+            drawTick(c, curK, textX, top + (1f - e) * shift, p, room, 0f, alpha);
             c.restore();
         } else {
-            drawTick(c, items.get(cur), textX, top, p, room, alpha);
+            drawTick(c, curK, textX, top, p, room, scroll, alpha);
         }
 
         if (n > 1) {
@@ -233,14 +261,16 @@ final class AmbientView extends View {
         }
     }
 
-    /** Label in its color, then the message, trimmed to fit `room` px. */
+    /** Label in its color, then the message in `room` px, shifted left by `scroll` px. */
     private void drawTick(Canvas c, WheelView.Tick k, float x, float top, float p, float room,
-                          float alpha) {
+                          float scroll, float alpha) {
         int[] lc = {k.color};
         float lw = DotFont.draw(c, k.label, x, top, p, p * 0.36f, dot, lc, alpha);
-        int cols = (int) ((room - lw) / p) - 5;
-        String text = WheelView.fit(k.text, Math.max(4, cols));
-        DotFont.draw(c, text, x + lw + p * 5, top, p, p * 0.36f, dot, DIM, alpha);
+        float tx = x + lw + p * 5, right = x + room;
+        c.save();
+        c.clipRect(tx - p * 0.5f, top - p, right, top + 8 * p);
+        DotFont.draw(c, k.text, tx - scroll, top, p, p * 0.36f, dot, DIM, alpha, tx - p, right);
+        c.restore();
     }
 
     boolean isIdle() {
@@ -295,16 +325,15 @@ final class AmbientView extends View {
             drawIdle(c, now, idle * IDLE_BRIGHTNESS, theme);
         }
 
-        // The bottom of the screen is shared. Normal mode: it's the train's track.
-        // Idle mode: the news ticker runs there, and a train rides on top of it like rails.
-        float trackY = h * 0.985f;    // low, so the time above it clears the wheel
-        boolean ticker = idle > 0.01f && news != null && !news.isEmpty();
-        if (ticker) {
+        // The bottom of the screen is shared: the NYT ticker always runs there (dimmer on
+        // the main screen so it doesn't pull your eye from the wheel), and a train rides
+        // on top of it like rails. Never at the top.
+        float trackY = h * 0.985f;    // no headlines yet: the train runs along the bottom
+        if (news != null && !news.isEmpty()) {
             float np = h / 170f;
             float newsTop = h * 0.955f - 7 * np;
-            drawNews(c, up, newsTop, np, idle * IDLE_BRIGHTNESS);
-            float rails = newsTop - np * 1.6f;
-            trackY = trackY + (rails - trackY) * idle;
+            drawNews(c, up, newsTop, np, normal * NEWS_MAIN_BRIGHTNESS + idle * IDLE_BRIGHTNESS);
+            trackY = newsTop - np * 1.6f;
         }
         drawTrain(c, now, trackY, normal + idle * IDLE_BRIGHTNESS);
     }
@@ -365,13 +394,13 @@ final class AmbientView extends View {
             t = TrainDoodle.progress(now, dep);
         }
         if (t < 0) return;
-        String label = "TO " + Config.TRAIN_TO;
+        String label = "NEXT TRAIN TO " + Config.TRAIN_TO;
         if (dep > 0) {
             TimeZone tz = TimeZone.getDefault();
             hm.setTimeZone(tz);
             ampm.setTimeZone(tz);
             Date d = new Date(dep);
-            label = hm.format(d) + " " + ampm.format(d).toUpperCase(Locale.US) + " " + label;
+            label += "  " + hm.format(d) + " " + ampm.format(d).toUpperCase(Locale.US);
         }
         float h = getHeight();
         TrainDoodle.draw(c, dot, getWidth(), bottom, h / 190f, t, label, alpha);
