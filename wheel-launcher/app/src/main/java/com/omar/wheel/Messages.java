@@ -80,7 +80,17 @@ final class Messages {
         return now - t < ON_CARD_MS ? p.getString(K_TEXT, null) : null;
     }
 
-    /** The last email if it's recent enough for the card, else null. */
+    /** How long a text or email shows on the card before it says NO NEW MESSAGES / MAIL. */
+    static final long FRESH_MS = 5 * 60 * 1000L;
+
+    /** The last text (or email) if it came in the last 5 minutes, else null. */
+    static String fresh(Context c, long now, boolean mail) {
+        SharedPreferences p = sp(c);
+        long t = p.getLong(mail ? K_MAIL_TIME : K_TIME, 0);
+        return now - t < FRESH_MS ? p.getString(mail ? K_MAIL_TEXT : K_TEXT, null) : null;
+    }
+
+    /** The last email if it's recent enough to open with Play/Pause, else null. */
     static String recentMail(Context c, long now) {
         SharedPreferences p = sp(c);
         long t = p.getLong(K_MAIL_TIME, 0);

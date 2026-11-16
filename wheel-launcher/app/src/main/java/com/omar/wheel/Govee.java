@@ -59,9 +59,9 @@ final class Govee {
         String l = label == null ? "" : label.toUpperCase(java.util.Locale.US);
         if (p.startsWith("com.netflix") || l.contains("NETFLIX")) return 0xFF0000;      // red
         if (p.contains("youtube") || l.contains("YOUTUBE")) return 0xFF1A8C;            // pink
-        if (p.contains("peacock") || l.contains("PEACOCK")) return 0xFF7A00;            // orange
-        if (p.contains("tubi") || l.contains("TUBI")) return 0xFFD400;                  // yellow
-        if (p.startsWith("com.hulu") || l.contains("HULU")) return 0x7CFF00;            // lime
+        if (p.contains("peacock") || l.contains("PEACOCK")) return 0xFF3C00;            // orange (the strip runs green-heavy)
+        if (p.contains("tubi") || l.contains("TUBI")) return 0xFF9A00;                  // yellow (shows as yellow on the strip)
+        if (p.startsWith("com.hulu") || l.contains("HULU")) return 0x1CE783;            // mint green
         if (p.startsWith("com.disney") || l.contains("DISNEY")) return 0x00E0B0;        // teal
         if (p.contains("avod") || p.contains("primevideo") || l.contains("PRIME")) return 0x00A8FF; // sky
         if (p.startsWith("com.wbd") || p.startsWith("com.hbo") || l.contains("HBO")) return 0x8A2BE2; // violet
@@ -69,7 +69,7 @@ final class Govee {
         return 0;
     }
 
-    static final int PLAYSTATION = 0x0030FF, XBOX = 0x00C800;   // deep blue, green
+    static final int PLAYSTATION = 0x0030FF, XBOX = 0x00FF00;   // deep blue, pure green
     /** Brightness (1-100) while an app's color shows; Wheel's home light sets its own. */
     static final int APP_BRIGHTNESS = 100;
 

@@ -603,10 +603,11 @@ final class WheelView extends View {
             return out;
         }
 
-        String msg = Messages.recent(getContext(), now);
-        if (msg != null) out.add(new Tick("MSG", msg, TICK_MSG));
-        String mail = Messages.recentMail(getContext(), now);
-        if (mail != null) out.add(new Tick("MAIL", mail, TICK_MAIL));
+        // A text or email shows for 5 minutes, then the card says there's nothing new.
+        String msg = Messages.fresh(getContext(), now, false);
+        out.add(new Tick("MSG", msg != null ? msg : "NO NEW MESSAGES", TICK_MSG));
+        String mail = Messages.fresh(getContext(), now, true);
+        out.add(new Tick("MAIL", mail != null ? mail : "NO NEW MAIL", TICK_MAIL));
         for (String[] l : Agenda.lines(agenda, now, tz, 3)) out.add(new Tick(l[0], l[1], TICK_CAL));
         if (calendarNote != null) out.add(new Tick("CAL", calendarNote, TICK_CAL));
 

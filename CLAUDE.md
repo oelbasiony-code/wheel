@@ -48,8 +48,9 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 - `MessageOverlay.java`: the envelope icon (top-right, 10 s, dot teal = text, orange = mail),
   like a phone's notification icon. Over apps HomeWatcher shows it (icon only; ☰ can't be caught
   there, so it stays unread). On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
-  the middle; ☰, Back or any button closes. Play/Pause opens the newest any time. Texts stay on
-  the card as MSG, emails as MAIL (separate, 2 hours each). An email = a body with line breaks.
+  the middle; ☰, Back or any button closes. Play/Pause opens the newest any time. Texts show on
+  the card as MSG, emails as MAIL, for 5 minutes; then MSG says NO NEW MESSAGES and MAIL says NO NEW
+  MAIL (both always on the card). Play/Pause still opens the newest for 2 hours. An email = a body with line breaks.
   Do Not Disturb (tile in the all-apps list): no icon over shows; it shows when you're back on Wheel.
   An empty body arrives from ntfy as "triggered"; Wheel then shows just the title. The same text twice within 30 s shows once (two phone automations: chosen senders + "contains a space").
   Don't rely on catching remote keys in HomeWatcher: on this stick key filtering didn't reach
@@ -67,8 +68,8 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   `--es govee_ip 'IP'`); Govee cloud key as fallback (`--es govee_key 'KEY'`, secret, not in
   repo). Lights on/off with the TV only when the tile LIGHTS FOLLOW TV (all-apps list) is ON; off by default; opening an app
   from Wheel turns it that app's own color (Govee.colorFor, by package or wheel name: Netflix red,
-  YouTube pink, Peacock orange, Tubi yellow, Hulu lime, Xbox green, Disney+ teal, Prime sky, PS deep blue,
-  HBO violet, Apple TV cool white). Cloud allows ~10 commands/min: only changes are sent, stale requests dropped, back on Wheel it goes to the home light: warm white 2700K at 60%, candlelight 2000K at 35% from 9 pm to 5 am (Config.HOME_LIGHT_*, NIGHT_*); it shifts by itself at 9 pm while you sit on Wheel.
+  YouTube pink, Peacock orange, Tubi yellow, Hulu mint, Xbox pure green, Disney+ teal, Prime sky, PS deep blue,
+  HBO violet, Apple TV cool white). The strip runs green-heavy: yellow = FF9A00, orange = FF3C00. Cloud allows ~10 commands/min: only changes are sent, stale requests dropped, back on Wheel it goes to the home light: warm white 2700K at 60%, candlelight 2000K at 35% from 9 pm to 5 am (Config.HOME_LIGHT_*, NIGHT_*); it shifts by itself at 9 pm while you sit on Wheel.
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
 - `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, hold,
   fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first
