@@ -78,6 +78,7 @@ final class Commands {
 
     /** TV on (if it's off) and over to an input. */
     private static void toInput(Context c, String input) throws InterruptedException {
+        RokuTv.wakeOnLan(c);   // a sleeping TV starts waking now, while we ask if it's on
         if (!Boolean.TRUE.equals(RokuTv.screenOn(c))) {
             RokuTv.powerOn(c);
             Thread.sleep(4000);
@@ -91,6 +92,7 @@ final class Commands {
      */
     private static void toFireStick(Context c, int kind) throws InterruptedException {
         Startup.holdAutoBoot();   // the TV turning on shouldn't also play the normal boot
+        RokuTv.wakeOnLan(c);      // a sleeping TV starts waking now, while we ask if it's on
         boolean wasOn = Boolean.TRUE.equals(RokuTv.screenOn(c));
         if (!wasOn) {
             RokuTv.powerOn(c);

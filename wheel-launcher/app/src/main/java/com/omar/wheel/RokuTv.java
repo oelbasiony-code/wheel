@@ -80,21 +80,23 @@ final class RokuTv {
     /**
      * Turns the TV on, even from deep sleep. A Roku TV that's been off a while drops off
      * Wi-Fi and ignores ECP, but it wakes on a Wake-on-LAN packet (supports-wake-on-wlan),
-     * so if PowerOn doesn't go through, send the magic packet and try again for ~20 s.
+     * so if PowerOn doesn't go through, send the magic packet and keep trying for ~40 s.
      * Off the main thread.
      */
     static boolean powerOn(Context ctx) {
-        if (press(ctx, "PowerOn")) return true;
-        for (int i = 0; i < 10; i++) {
-            wakeOnLan(ctx);
-            try { Thread.sleep(2000); } catch (InterruptedException e) { return false; }
+        // Send the magic packet first, so a sleeping TV starts waking right away instead of
+        // after a timed-out PowerOn; then keep nudging it every second for up to ~40 s.
+        wakeOnLan(ctx);
+        for (int i = 0; i < 40; i++) {
             if (press(ctx, "PowerOn")) return true;
+            wakeOnLan(ctx);
+            try { Thread.sleep(1000); } catch (InterruptedException e) { return false; }
         }
         return false;
     }
 
     /** Sends the Wake-on-LAN magic packet to the TV's Wi-Fi and Ethernet addresses. */
-    private static void wakeOnLan(Context ctx) {
+    static void wakeOnLan(Context ctx) {
         SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         String macs = sp.getString(K_MACS, Config.ROKU_TV_MACS);
         DatagramSocket sock = null;
