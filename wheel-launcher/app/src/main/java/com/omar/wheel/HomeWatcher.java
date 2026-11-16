@@ -119,6 +119,8 @@ public final class HomeWatcher extends AccessibilityService {
                             }
                         }
                         tvWasOn = on;
+                        // Sitting on Wheel at 9 pm: the home light turns to candlelight.
+                        if (on && MainActivity.onScreen) Govee.homeTick(c);
                     }
                     try {
                         Thread.sleep(TV_POLL_MS);

@@ -163,19 +163,51 @@ final class Govee {
         });
     }
 
-    /** Wheel's own light: warm white (Config.HOME_LIGHT_K) at HOME_LIGHT_BRIGHTNESS. */
+    /** True from 9 pm to 5 am (Config.NIGHT_FROM_HOUR / NIGHT_UNTIL_HOUR). */
+    static boolean night() {
+        int hr = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        return hr >= Config.NIGHT_FROM_HOUR || hr < Config.NIGHT_UNTIL_HOUR;
+    }
+
+    private static volatile Boolean homeWasNight;
+
+    /**
+     * On Wheel when 9 pm (or 5 am) comes around: shift the home light. Only if the
+     * strip is showing the home light (not an app's color). Call off the main thread.
+     */
+    static void homeTick(Context ctx) {
+        final Context c = ctx.getApplicationContext();
+        if (Config.HOME_LIGHT_K <= 0 || sp(c).getBoolean(K_TINTED, false)) return;
+        boolean n = night();
+        Boolean was = homeWasNight;
+        if (was != null && was != n) {
+            q.execute(new Runnable() {
+                @Override
+                public void run() {
+                    home(c);
+                }
+            });
+        }
+        homeWasNight = n;
+    }
+
+    /** Wheel's own light: warm white by day, candlelight at night (see Config). */
     private static void home(Context c) {
         if (Config.HOME_LIGHT_K <= 0) return;
+        boolean n = night();
+        homeWasNight = n;
+        int k = n ? Config.NIGHT_LIGHT_K : Config.HOME_LIGHT_K;
+        int b = n ? Config.NIGHT_LIGHT_BRIGHTNESS : Config.HOME_LIGHT_BRIGHTNESS;
         try {
             String ip = lanIp(c);
             if (ip != null) {
                 lanSend(ip, "colorwc", new JSONObject().put("color", rgbJson(0))
-                        .put("colorTemInKelvin", Config.HOME_LIGHT_K));
-                lanSend(ip, "brightness", new JSONObject().put("value", Config.HOME_LIGHT_BRIGHTNESS));
+                        .put("colorTemInKelvin", k));
+                lanSend(ip, "brightness", new JSONObject().put("value", b));
                 return;
             }
-            cloud(c, "devices.capabilities.color_setting", "colorTemperatureK", Config.HOME_LIGHT_K);
-            cloud(c, "devices.capabilities.range", "brightness", Config.HOME_LIGHT_BRIGHTNESS);
+            cloud(c, "devices.capabilities.color_setting", "colorTemperatureK", k);
+            cloud(c, "devices.capabilities.range", "brightness", b);
         } catch (Exception e) {
             Log.d(HomeWatcher.TAG, "govee home: " + e);
         }
