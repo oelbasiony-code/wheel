@@ -119,7 +119,7 @@ shows only "LAUNDRY IN 7 MIN" (pulsing), then "LAUNDRY NOW" for 5 minutes, with 
 card (Omar's call: the train animation covers it).
 Commuter rail train: rolls along the bottom with "NEXT TRAIN TO BOSTON 4:58 AM" (small,
 centered over it), every 5 minutes in the 30 minutes before the next train.
-NYT headlines ticker: always running along the very bottom (dimmer on the main screen, full in
+NYT headlines ticker: along the very bottom of the main screen (dimmer; NOT in idle mode, Omar's call:
 idle), "NYT" label, a dot between headlines, refreshed every 15 minutes, all in `AmbientView`.
 The bottom is shared: the train rides on top of the ticker like rails. Never put the train at
 the top.
@@ -128,7 +128,7 @@ the top.
 
 All of Omar's picks are built and on the TV: messages (texts via iPhone Shortcut with contact
 names; BU email via Gmail forwarding to ntfy's email address), the envelope icon + MSG/MAIL
-cards (sleep screen: card right under the clock), Govee (cloud API key; app colors at 100%, home light warm white by day / candlelight
+cards, a calm sleep screen (dino, time, date, weather only; no news or card), Govee (cloud API key; app colors at 100%, home light warm white by day / candlelight
 9 pm-5 am, LIGHTS FOLLOW TV tile, TV on/off from the Roku's power-mode), the startup
 sequence, the daily briefing (first TV-on at 5 am or later), the calendar
 countdown on the card, WORD OF DAY, centered idle mode.

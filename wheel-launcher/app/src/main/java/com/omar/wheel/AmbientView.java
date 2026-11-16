@@ -462,7 +462,7 @@ final class AmbientView extends View {
                 gapL = sp[0] - np * 3;
                 gapR = sp[1] + np * 3;
             }
-            drawNews(c, up, newsTop, np, normal * NEWS_MAIN_BRIGHTNESS + idle * IDLE_BRIGHTNESS, gapL, gapR);
+            drawNews(c, up, newsTop, np, normal * NEWS_MAIN_BRIGHTNESS, gapL, gapR);   // not in idle
             // Train body centered on the headline text.
             trackY = newsTop + 3.5f * np - TrainDoodle.BODY_MID_ROWS * tp + TrainDoodle.ROWS * tp;
         }
@@ -595,17 +595,13 @@ final class AmbientView extends View {
 
         float clockW = DotFont.cols(time) * cp + cp * 1.5f + DotFont.cols(ap) * sp;
         float wxW = wx == null ? 0 : DotFont.cols(wx) * dp + dp * 3 + Doodles.ICON_COLS * iconP;
-        java.util.List<WheelView.Tick> ticks = wheel.tickerItems(now);
-        float calP = h / 170f;
-        float calH = ticks.isEmpty() ? 0 : 7 * calP + 2 * WheelView.TICK_PAD_ROWS * calP + h * 0.04f;
         float dinoH = Doodles.DINO_ROWS * dinoP;
         float blockH = dinoH + h * 0.02f + 7 * cp + h * 0.04f + 7 * dp
-                + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP) + calH;
+                + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP);
 
-        // Every line centered on the screen; the block nudged up when the news ticker
-        // (and maybe a train) runs below.
+        // Calm: just the time, date and weather, every line centered on the screen
+        // (no news ticker or card here; Omar's call).
         float y = (h - blockH) / 2f;
-        if (news != null && !news.isEmpty()) y -= h * 0.055f;
 
         // The clock line (digits + AM/PM) centered; the dino walks above the digits only.
         float x = (w - clockW) / 2f;
@@ -619,14 +615,6 @@ final class AmbientView extends View {
         cx += DotFont.draw(c, time, cx, y, cp, cp * 0.38f, dot, CLOCK, alpha) + cp * 1.5f;
         DotFont.draw(c, ap, cx, y + 7 * cp - 7 * sp, sp, sp * 0.38f, dot, DIM, alpha);
         y += 7 * cp + h * 0.04f;
-
-        if (!ticks.isEmpty()) {
-            // The rotating line right under the time, in its card, as wide as the clock.
-            float cardW = Math.max(clockW, w * 0.4f);
-            float pad = WheelView.TICK_PAD_ROWS * calP;
-            drawTicker(c, ticks, now, (w - cardW) / 2f, y + pad, calP, cardW, alpha);
-            y += 7 * calP + 2 * pad + h * 0.04f;
-        }
 
         // Date centered (the month's icon hangs off its right end, not counted).
         float dateW = DotFont.cols(date) * dp;
