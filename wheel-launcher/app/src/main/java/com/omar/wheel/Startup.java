@@ -59,12 +59,14 @@ final class Startup {
     }
 
     static void play(boolean withBriefing) {
+        bootPending = false;   // a demo replaces the automatic one
         bootAt = SystemClock.uptimeMillis();
         briefAt = withBriefing ? bootAt + BOOT_MS : -1;
         pts = null;
     }
 
     static void playBriefing() {
+        bootPending = false;
         bootAt = -1;
         briefAt = SystemClock.uptimeMillis();
     }
