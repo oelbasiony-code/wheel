@@ -119,9 +119,9 @@ shows only "LAUNDRY IN 7 MIN" (pulsing), then "LAUNDRY NOW" for 5 minutes, with 
 card (Omar's call: the train animation covers it).
 Commuter rail train: rolls along the bottom with "NEXT TRAIN TO BOSTON 4:58 AM" (small,
 centered over it), every 5 minutes in the 30 minutes before the next train.
-NYT headlines ticker: along the very bottom of the main screen (dimmer; NOT in idle mode, Omar's call:
-idle), "NYT" label, a dot between headlines, refreshed every 15 minutes, all in `AmbientView`.
-The bottom is shared: the train rides on top of the ticker like rails. Never put the train at
+NYT headlines: one at a time on the card ("NYT", a different headline each time around),
+refreshed every 15 minutes (News.java, fetched in `AmbientView`). Not a bottom ticker anymore
+and not in idle mode (Omar's call). The bottom belongs to the train. Never put the train at
 the top.
 
 ## Status (Nov 16)
