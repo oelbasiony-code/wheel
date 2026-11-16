@@ -131,10 +131,10 @@ final class AmbientView extends View {
 
     /** Go into idle mode right now (for trying it out); any remote press wakes it. */
     void demoIdle() {
-        forceIdle = true;   // applied on the next frame (Wheel resumes after the intent)
+        holdIdle = true;    // stays idle until a real remote press
     }
 
-    private boolean forceIdle;
+    private boolean holdIdle;
 
     /** Send one train across the screen right now, whatever the timetable says. */
     void demoTrain() {
@@ -249,6 +249,7 @@ final class AmbientView extends View {
 
     /** Any remote press counts as activity and wakes idle mode. */
     void poke() {
+        holdIdle = false;
         lastInput = SystemClock.uptimeMillis();
         if (idle > 0) waking = true;
     }
@@ -259,8 +260,7 @@ final class AmbientView extends View {
         long now = System.currentTimeMillis();
         long dt = lastFrame == 0 ? 0 : Math.min(200, up - lastFrame);
         lastFrame = up;
-        if (forceIdle) {
-            forceIdle = false;
+        if (holdIdle) {
             lastInput = up - IDLE_AFTER_MS - 1;
             waking = false;
         }
