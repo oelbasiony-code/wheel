@@ -61,6 +61,7 @@ final class Startup {
 
     static void play(boolean withBriefing) {
         bootPending = false;   // a demo replaces the automatic one
+        news = null;
         bootAt = SystemClock.uptimeMillis();
         briefAt = withBriefing ? bootAt + BOOT_MS : -1;
         pts = null;
@@ -121,7 +122,11 @@ final class Startup {
         if (bootAt >= 0) {
             long t = up - bootAt;
             if (t < BOOT_MS) {
-                drawBoot(c, dot, w, h, t);
+                if (newsFor != bootAt) {   // once per boot
+                    newsFor = bootAt;
+                    news = wheel.bootNews(System.currentTimeMillis());
+                }
+                drawBoot(c, dot, w, h, t, wheel);
                 return;
             }
             bootAt = -1;
@@ -152,7 +157,10 @@ final class Startup {
         return (color & 0x00FFFFFF) | (ca << 24);
     }
 
-    private static void drawBoot(Canvas c, Paint dot, float w, float h, long t) {
+    private static String news;   // the boot screen's second line, picked when it starts
+    private static long newsFor = -2;
+
+    private static void drawBoot(Canvas c, Paint dot, float w, float h, long t, WheelView wheel) {
         String text = "WELCOME BACK, " + Config.NAME;
         float p = h / 90f;                          // dot pitch: big, centered
         if (pts == null) {
@@ -196,6 +204,20 @@ final class Startup {
             float fadeA = gone > 0f ? 1f - gone : 1f;
             dot.setColor(alpha(landed ? CREAM : TEAL, (0.25f + 0.75f * k) * fadeA));
             c.drawCircle(fx, fy, landed ? r : r * 0.7f, dot);
+        }
+
+        if (news != null) {
+            // Second line: only when there's something to say. Fades in once the words land.
+            float np = p * 0.45f;
+            float nk = smooth((t - FLY_MS * 0.8f) / 600f);
+            float nx = (w - DotFont.cols(news) * np) / 2f;
+            float ny = y0 + 7 * p + p * 4 + (1f - nk) * p * 2;
+            if (nk > 0f && nx + DotFont.cols(news) * np > edge) {
+                c.save();
+                c.clipRect(Math.max(0, edge + band * 0.5f), 0, w, h);
+                DotFont.draw(c, news, nx, ny, np, np * 0.36f, dot, new int[]{TEAL}, nk);
+                c.restore();
+            }
         }
 
         float sx = edge + band;

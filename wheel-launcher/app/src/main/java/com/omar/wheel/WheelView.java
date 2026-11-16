@@ -534,6 +534,49 @@ final class WheelView extends View {
         return theme.greeting != null ? theme.greeting : part + ", " + Config.NAME;
     }
 
+    private static final long SOON_MS = 10 * 60000L, NOW_FOR_MS = 5 * 60000L;
+
+    /** A timed event starting in the next 10 minutes (or started in the last 5), or null. */
+    Agenda.Event startingSoon(long now) {
+        if (agenda == null) return null;
+        for (Agenda.Event e : agenda) {
+            if (e.allDay) continue;
+            if (e.start - now <= SOON_MS && now - e.start < NOW_FOR_MS) return e;
+        }
+        return null;
+    }
+
+    /**
+     * News for the boot screen's second line ("NEW MESSAGE - RAIN AT 3P"), or null on
+     * a quiet day. At most two things, most urgent first.
+     */
+    String bootNews(long now) {
+        TimeZone tz = TimeZone.getDefault();
+        java.util.ArrayList<String> bits = new java.util.ArrayList<>();
+        if (Messages.unread(getContext()) != null) bits.add("NEW MESSAGE");
+        long train = nextTrain(now);
+        if (train > now && train - now <= 30 * 60000L) {
+            bits.add("TRAIN IN " + ((train - now) / 60000) + " MIN");
+        }
+        if (agenda != null) {
+            for (Agenda.Event e : agenda) {
+                if (!e.allDay && e.start > now && e.start - now <= 60 * 60000L) {
+                    bits.add(e.title + " AT " + Agenda.clock(e.start, tz));
+                    break;
+                }
+            }
+        }
+        Weather.Extra x = weatherExtra;
+        if (x != null && x.wetAt > now - 3600000L && x.wetAt < now + 12 * 3600000L) {
+            String what = x.wetIsSnow ? "SNOW" : "RAIN";
+            bits.add(x.wetAt <= now + 45 * 60000L ? what + " SOON" : what + " AT " + Agenda.clock(x.wetAt, tz));
+        }
+        if (bits.isEmpty()) return null;
+        String out = bits.get(0);
+        if (bits.size() > 1) out += "  -  " + bits.get(1);
+        return DotFont.clean(out);
+    }
+
     // For the morning briefing.
     String weatherRange() {
         return weatherRange;
@@ -558,6 +601,7 @@ final class WheelView extends View {
     static final class Tick {
         final String label, text;
         final int color;
+        boolean pulse;   // breathes slowly (an event about to start)
 
         Tick(String label, String text, int color) {
             this.label = DotFont.clean(label);
@@ -572,13 +616,25 @@ final class WheelView extends View {
     List<Tick> tickerItems(long now) {
         java.util.ArrayList<Tick> out = new java.util.ArrayList<>();
         TimeZone tz = TimeZone.getDefault();
+
+        // An event about to start takes over the card: "LAUNDRY IN 7 MIN", then "LAUNDRY NOW".
+        Agenda.Event soon = startingSoon(now);
+        if (soon != null) {
+            long mins = (soon.start - now + 59999) / 60000;
+            Tick t = new Tick(Agenda.clock(soon.start, tz),
+                    soon.title + (soon.start <= now ? " NOW" : " IN " + mins + " MIN"), TICK_CAL);
+            t.pulse = true;
+            out.add(t);
+            return out;
+        }
+
         String msg = Messages.recent(getContext(), now);
         if (msg != null) out.add(new Tick("MSG", msg, TICK_MSG));
         for (String[] l : Agenda.lines(agenda, now, tz, 3)) out.add(new Tick(l[0], l[1], TICK_CAL));
         if (calendarNote != null) out.add(new Tick("CAL", calendarNote, TICK_CAL));
 
         // The next train isn't on the card: the train itself rolls by before it leaves.
-        out.add(new Tick("WORD", Words.today(now, tz), TICK_WORD));
+        out.add(new Tick("WORD OF DAY", Words.today(now, tz), TICK_WORD));
 
         Weather.Extra x = weatherExtra;
         if (x != null) {

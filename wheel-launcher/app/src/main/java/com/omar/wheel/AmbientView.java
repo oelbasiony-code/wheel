@@ -359,6 +359,11 @@ final class AmbientView extends View {
     /** Label in its color, then the message in `room` px, shifted left by `scroll` px. */
     private void drawTick(Canvas c, WheelView.Tick k, float x, float top, float p, float room,
                           float scroll, float alpha) {
+        if (k.pulse) {
+            // A slow breath (about 2.4 s), never fading out completely.
+            double ph = (System.currentTimeMillis() % 2400L) / 2400.0 * Math.PI * 2;
+            alpha *= 0.6f + 0.4f * (float) (0.5 + 0.5 * Math.cos(ph));
+        }
         int[] lc = {k.color};
         float lw = DotFont.draw(c, k.label, x, top, p, p * 0.36f, dot, lc, alpha);
         float tx = x + lw + p * 5, right = x + room;

@@ -63,7 +63,8 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
 - `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, scan
   line reveals the wheel) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first
-  event, next train, typed out). Any button skips. Try it: `--ez boot_demo true` (add
+  event, next train, typed out). The boot adds a second line only when there's news (NEW MESSAGE, TRAIN IN 12 MIN,
+  an event within the hour, RAIN AT 3P). Any button skips. Try it: `--ez boot_demo true` (add
   `--ez briefing true`), or `--ez briefing_demo true`.
 
 ## Omar's setup (his Mac)
@@ -107,7 +108,8 @@ phase, idle mode, holidays (Halloween, Thanksgiving, Christmas, Ramadan, Eid, bi
 PS5/Xbox input switching, Google Calendar, MBTA trains, and a rotating info line above the
 greeting, now a Smart Stack card (faint dotted rounded box, messages slide up, position dots
 on the right, long text scrolls sideways). It rotates Calendar (tomorrow's first event when
-today is empty) and a word of the day (just the word), with a rain warning when relevant. No train on the
+today is empty) and WORD OF DAY (just the word). 10 minutes before a timed event the card
+shows only "LAUNDRY IN 7 MIN" (pulsing), then "LAUNDRY NOW" for 5 minutes, with a rain warning when relevant. No train on the
 card (Omar's call: the train animation covers it).
 Commuter rail train: rolls along the bottom with "NEXT TRAIN TO BOSTON 4:58 AM" (small,
 centered over it), every 5 minutes in the 30 minutes before the next train.
@@ -126,7 +128,7 @@ the top.
    normal on Home. Screen-content color matching isn't possible on the stick (DRM blocks capture).
    Prefer Govee's LAN API (UDP multicast scan 239.255.255.250:4001, replies on 4002, commands
    to the light's IP on 4003; needs "LAN Control" on in the Govee Home app). On Nov 16 a scan
-   from the Mac got no reply, so LAN Control was probably off. Fall back to the cloud API key.
+   from the Mac got no reply, so LAN Control was probably off. Cloud API key is saved on the stick (Nov 16); strip = H615C "RGB Strip Lights" (LAN Control unavailable).
 
 Built Nov 16 (Omar said go):
 
