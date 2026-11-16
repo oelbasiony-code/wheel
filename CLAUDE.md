@@ -36,11 +36,10 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   Anything posted to https://ntfy.sh/TOPIC shows up. It is NOT connected to iMessage, Gmail or
   iPhone notifications (Apple blocks reading notifications). Planned feeds into the topic:
   iPhone Shortcuts automations (Message / Email triggers) and maybe a Gmail Apps Script.
-- `scripts/gmail-to-tv.gs`: Google Apps Script Omar runs in his own Google account
-  (script.google.com). Every 5 min it sends new important Gmail (sender name + subject only;
-  .edu / aamc / admissions words) to the topic and labels it "TV". The topic is pasted in by
-  Omar, never committed. His iPhone's Mail app isn't Gmail, and the iOS Message automation
-  trigger wasn't available on his phone, so this is the email route.
+- Feeding the topic is done on Omar's iPhone with Shortcuts automations (Message trigger for
+  chosen people; Email trigger on his Gmail account, which he adds to Apple's Mail app; both
+  POST sender + text/subject to the topic). A Google Apps Script route was tried and dropped:
+  Google's script servers get "Address unavailable" from ntfy.sh.
 - `MessageOverlay.java`: the banner over other apps (top-right, 10 s, like a phone notification).
   On Wheel the message pops up big in the middle for 10 s (any button closes it). Either way it
   stays on the card as MSG for 2 hours. Do Not Disturb (tile in the all-apps list, ☰ on Wheel):
@@ -106,7 +105,7 @@ the top.
 ## Next up (Omar's picks, in order)
 
 1. **Messages to the TV**: built (see Messages.java). Left: Omar's iPhone side (Shortcut and/or
-   automations for chosen iMessages/emails), maybe a Gmail Apps Script for school emails.
+   automations for chosen iMessages and Gmail via Apple Mail).
 2. **Govee lights** (next) (model H615C LED strip): (a) lights on when the TV turns on, off when it
    turns off, with a hidden toggle so Omar can switch this on/off; (b) when a streaming app
    opens, fade the lights to that app's brand color (Netflix red, Disney+ blue...), back to
