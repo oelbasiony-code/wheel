@@ -222,7 +222,7 @@ final class Startup {
         float lp = p * 0.7f;                        // label pitch
         float r = 0.36f;
 
-        String hello = "GOOD MORNING, " + Config.NAME;
+        String hello = DotFont.clean(WheelView.greeting(now));   // same as the panel says
         String date = DotFont.clean(new SimpleDateFormat("EEEE, MMMM d", Locale.US).format(new Date(now)));
         String weather = wheel.weatherNow();
         String range = wheel.weatherRange();

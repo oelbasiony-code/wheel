@@ -91,9 +91,18 @@ final class AmbientView extends View {
         public void run() {
             if (!active) return;
             invalidate();
-            // In step with the screen (~60 fps) only while the startup sequence plays.
-            if (Startup.showing()) postOnAnimation(this);
+            // While the startup sequence plays: every other screen refresh (a steady 30 fps;
+            // the stick can't quite hold 60, and uneven frames look choppier than fewer).
+            if (Startup.showing()) postOnAnimation(everyOther);
             else postDelayed(this, FRAME_MS);
+        }
+    };
+
+    private final Runnable everyOther = new Runnable() {
+        @Override
+        public void run() {
+            if (!active) return;
+            postOnAnimation(frame);   // skip this refresh, draw on the next
         }
     };
 

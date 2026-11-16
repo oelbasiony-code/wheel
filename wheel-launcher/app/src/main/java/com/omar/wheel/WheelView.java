@@ -452,11 +452,7 @@ final class WheelView extends View {
         dateFmt.setTimeZone(tz);
         Calendar cal = Calendar.getInstance(tz);
         cal.setTime(now);
-        int hr = cal.get(Calendar.HOUR_OF_DAY);
-        String part = hr < 5 ? "GOOD NIGHT" : hr < 12 ? "GOOD MORNING" : hr < 17 ? "GOOD AFTERNOON"
-                : hr < 22 ? "GOOD EVENING" : "GOOD NIGHT";
-        Season.Theme theme = Season.today(nowMs);
-        String greet = theme.greeting != null ? theme.greeting : part + ", " + Config.NAME;
+        String greet = greeting(nowMs);
 
         float panelTop = h * 0.27f;
         float y = panelTop;
@@ -526,6 +522,17 @@ final class WheelView extends View {
 
     /** Space between the rotating line's text and its card, in dots. */
     static final float TICK_PAD_ROWS = 2.5f;
+
+    /** The greeting on the panel (GOOD MORNING, OMAR...; holidays have their own). */
+    static String greeting(long nowMs) {
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+        cal.setTimeInMillis(nowMs);
+        int hr = cal.get(Calendar.HOUR_OF_DAY);
+        String part = hr < 5 ? "GOOD NIGHT" : hr < 12 ? "GOOD MORNING" : hr < 17 ? "GOOD AFTERNOON"
+                : hr < 22 ? "GOOD EVENING" : "GOOD NIGHT";
+        Season.Theme theme = Season.today(nowMs);
+        return theme.greeting != null ? theme.greeting : part + ", " + Config.NAME;
+    }
 
     // For the morning briefing.
     String weatherRange() {
