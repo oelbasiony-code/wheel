@@ -259,18 +259,21 @@ final class Startup {
         int[] m = Messages.missed(wheel.getContext(), now);
         String mLine;
         if (m[0] == 0 && m[1] == 0) {
-            mLine = "NO NEW MESSAGES";
+            mLine = "NO NEW MAIL/MESSAGES";
         } else {
             mLine = "";
             if (m[0] > 0) mLine = m[0] + (m[0] == 1 ? " MESSAGE" : " MESSAGES");
-            if (m[1] > 0) mLine += (mLine.isEmpty() ? "" : ", ") + m[1] + " EMAIL" + (m[1] == 1 ? "" : "S");
+            if (m[1] > 0) mLine += (mLine.isEmpty() ? "" : ", ") + m[1] + " MAIL";
         }
-        String[] labels = {"WEATHER", "CAL", "MSG"};   // the card's labels and colors
+        String[] labels = {"WEATHER", "CAL", "MSG/MAIL"};   // the card's labels and colors
         String[] vals = {DotFont.clean(wLine), DotFont.clean(eLine), DotFont.clean(mLine)};
         int[] labelColors = {BLUE, WheelView.TICK_CAL, WheelView.TICK_MSG};
 
         // Lay the whole thing out as one block, centered on screen.
-        float labelW = DotFont.cols("WEATHER") * lp + p * 6;
+        float labelW = DotFont.cols("MSG/MAIL") * lp + p * 6;
+        // MSG in teal, the slash dim, MAIL in orange (colors go letter by letter).
+        int[] msgMail = {WheelView.TICK_MSG, WheelView.TICK_MSG, WheelView.TICK_MSG, 0xFF6E6A62,
+                WheelView.TICK_MAIL, WheelView.TICK_MAIL, WheelView.TICK_MAIL, WheelView.TICK_MAIL};
         float rowsW = 0;
         for (String v : vals) rowsW = Math.max(rowsW, labelW + DotFont.cols(v) * p);
         float helloW = DotFont.cols(hello) * big, dateW = DotFont.cols(date) * p;
@@ -308,7 +311,7 @@ final class Startup {
             if (k > 0f) {
                 float ry = y + (1f - k) * lift - leave;
                 DotFont.draw(c, labels[i], left, ry + (rowH - 7 * lp) / 2f, lp, lp * r, dot,
-                        new int[]{labelColors[i]}, k);
+                        i == 2 ? msgMail : new int[]{labelColors[i]}, k);
                 DotFont.draw(c, vals[i], left + labelW, ry, p, p * r, dot, new int[]{CREAM}, k);
             }
             y += rowH + rowGap;
