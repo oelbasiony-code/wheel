@@ -93,7 +93,7 @@ final class AmbientView extends View {
             invalidate();
             // While the startup sequence plays: every other screen refresh (a steady 30 fps;
             // the stick can't quite hold 60, and uneven frames look choppier than fewer).
-            if (Startup.showing()) postOnAnimation(everyOther);
+            if (Startup.showing()) postOnAnimation(this);   // every screen refresh (~60 fps)
             else postDelayed(this, FRAME_MS);
         }
     };

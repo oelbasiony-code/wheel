@@ -24,9 +24,9 @@ import java.util.TimeZone;
  */
 final class Startup {
 
-    private static final long FLY_MS = 1400, HOLD_MS = 800, SWEEP_MS = 2200;
+    private static final long FLY_MS = 2400, HOLD_MS = 1400, SWEEP_MS = 3000;
     private static final long BOOT_MS = FLY_MS + HOLD_MS + SWEEP_MS;
-    private static final long BRIEF_IN_MS = 700, BRIEF_MS = 10000, BRIEF_OUT_MS = 1200;
+    private static final long BRIEF_IN_MS = 1000, BRIEF_MS = 11000, BRIEF_OUT_MS = 1600;
     /** The day's briefing waits for the first time the TV comes on at or after this hour. */
     private static final int BRIEF_FROM_HOUR = 5;
 
@@ -194,8 +194,8 @@ final class Startup {
         for (int i = 0; i < n; i++) {
             float tx = pts[2 * i], ty = pts[2 * i + 1];
             // Staggered left to right, so the words assemble as you read them.
-            float delay = (tx / Math.max(1, cols)) * FLY_MS * 0.45f;
-            float k = ease((t - delay) / (FLY_MS * 0.55f));
+            float delay = (tx / Math.max(1, cols)) * FLY_MS * 0.35f;
+            float k = smooth((t - delay) / (FLY_MS * 0.65f));
             float fx = x0 + (from[2 * i] + (tx - from[2 * i]) * k) * p + p / 2;
             float fy = y0 + (from[2 * i + 1] + (ty - from[2 * i + 1]) * k) * p + p / 2;
             float gone = (edge + band * 0.5f - fx) / (band * 0.5f);   // fades as the edge passes
@@ -274,17 +274,17 @@ final class Startup {
         float lift = p * 6;
         float leave = out * p * 10;
 
-        float k = smooth((t - 200) / 1000f) * (1f - out);
+        float k = smooth((t - 300) / 1400f) * (1f - out);
         float y = top + (1f - k) * lift - leave;
         DotFont.draw(c, hello, (w - helloW) / 2f, y, big, big * r, dot, new int[]{CREAM}, k);
         y += 7 * big + p * 5;
-        k = smooth((t - 500) / 1000f) * (1f - out);
+        k = smooth((t - 700) / 1400f) * (1f - out);
         DotFont.draw(c, date, (w - dateW) / 2f, y + (1f - k) * lift - leave, p, p * r, dot,
                 new int[]{DIM}, k);
         y = top + 7 * big + p * 5 + 7 * p + p * 14;
 
         // A faint dotted rule between the greeting and the rows.
-        float rk = smooth((t - 800) / 1200f) * (1f - out);
+        float rk = smooth((t - 1100) / 1600f) * (1f - out);
         float ruleY = y - p * 7 - leave;
         float half = blockW / 2f * rk;
         dot.setColor(alpha(0xFF3A3834, rk));
@@ -293,7 +293,7 @@ final class Startup {
         }
 
         for (int i = 0; i < 3; i++) {
-            k = smooth((t - 1100 - i * 400L) / 1000f) * (1f - out);
+            k = smooth((t - 1500 - i * 550L) / 1400f) * (1f - out);
             if (k > 0f) {
                 float ry = y + (1f - k) * lift - leave;
                 DotFont.draw(c, labels[i], left, ry + (rowH - 7 * lp) / 2f, lp, lp * r, dot,
