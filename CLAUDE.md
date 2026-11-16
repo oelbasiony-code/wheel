@@ -62,7 +62,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   from Wheel fades to its color (PS/Xbox tiles too), back on Wheel it fades back to what it was.
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
 - `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, scan
-  line reveals the wheel) and the morning briefing (first time on before 11 am: weather, first
+  line reveals the wheel) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first
   event, next train, typed out). Any button skips. Try it: `--ez boot_demo true` (add
   `--ez briefing true`), or `--ez briefing_demo true`.
 

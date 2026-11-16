@@ -17,9 +17,9 @@ import java.util.TimeZone;
  * What plays when the TV turns on:
  *  1. Boot (~2.3 s): dots fly in from everywhere and settle into "WELCOME BACK, OMAR",
  *     then a scan line sweeps left to right and the wheel appears behind it.
- *  2. Morning briefing (the first time the TV comes on before 11 am): good morning,
- *     the weather, the first thing on the calendar and the next train, typed out line
- *     by line, then it settles into the wheel.
+ *  2. The daily briefing (the first time the TV comes on at 5 am or later, once a day):
+ *     the panel's greeting (GOOD MORNING / AFTERNOON / EVENING), the weather, the first
+ *     thing on the calendar and the next train, gliding in line by line.
  * Any button skips it. Drawn by AmbientView (the only layer that animates).
  */
 final class Startup {
@@ -27,7 +27,8 @@ final class Startup {
     private static final long FLY_MS = 1100, HOLD_MS = 700, SWEEP_MS = 1400;
     private static final long BOOT_MS = FLY_MS + HOLD_MS + SWEEP_MS;
     private static final long BRIEF_IN_MS = 700, BRIEF_MS = 10000, BRIEF_OUT_MS = 1200;
-    private static final int BRIEF_BEFORE_HOUR = 11;
+    /** The day's briefing waits for the first time the TV comes on at or after this hour. */
+    private static final int BRIEF_FROM_HOUR = 5;
 
     private static final int CREAM = 0xFFEDE6DA, TEAL = 0xFF9AD0C2, DIM = 0xFF6E6A62;
     private static final int GOLD = 0xFFE8C872, BLUE = 0xFF8FB8DE;
@@ -97,7 +98,7 @@ final class Startup {
 
     private static boolean briefingDue(Context c) {
         Calendar cal = Calendar.getInstance();
-        if (cal.get(Calendar.HOUR_OF_DAY) >= BRIEF_BEFORE_HOUR) return false;
+        if (cal.get(Calendar.HOUR_OF_DAY) < BRIEF_FROM_HOUR) return false;   // late nights don't use it up
         return !today().equals(sp(c).getString("briefed_on", ""));
     }
 
