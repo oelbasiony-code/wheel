@@ -582,7 +582,7 @@ final class WheelView extends View {
         }
     }
 
-    static final int TICK_CAL = 0xFFEDE6DA, TICK_WORD = 0xFFE8C872, TICK_MSG = 0xFF5FD8C8, TICK_RAIN = 0xFF8FB8DE,
+    static final int TICK_CAL = 0xFF9ED67A, TICK_WORD = 0xFFE8C872, TICK_MSG = 0xFF5FD8C8, TICK_RAIN = 0xFF8FB8DE,
             TICK_MAIL = 0xFFE8A87C;
 
     /** Everything the rotating line cycles through right now. */
