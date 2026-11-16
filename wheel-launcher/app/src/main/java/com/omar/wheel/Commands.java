@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import java.util.Calendar;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -13,7 +12,7 @@ import java.util.concurrent.Executors;
  * with "!" (never shown as messages). Each is a one-action Shortcut or automation:
  *   !home   arrived home: strip on, TV on to the Fire Stick, WELCOME HOME briefing
  *   !away   left home: strip off, and the TV off if it's only showing Wheel
- *   !wake   alarm stopped (mornings only): TV on, soft light, boot + the daily briefing
+ *   !wake   alarm stopped (any time): TV on, soft light, boot + the briefing (GOOD ___ by the time)
  *   !ps5    TV on to the PlayStation, strip blue
  *   !xbox   TV on to the Xbox, strip green
  * Runs inside the message listener (HomeWatcher), so it works whatever is on screen.
@@ -21,8 +20,6 @@ import java.util.concurrent.Executors;
 final class Commands {
 
     private static final ExecutorService q = Executors.newSingleThreadExecutor();
-    /** Wake-up after this hour is a nap alarm: ignored. */
-    private static final int WAKE_UNTIL_HOUR = 12;
 
     static void run(Context ctx, final String cmd) {
         final Context c = ctx.getApplicationContext();
@@ -53,7 +50,6 @@ final class Commands {
                 }
                 break;
             case "wake":
-                if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) >= WAKE_UNTIL_HOUR) return;
                 Govee.lightsOn(c);
                 toFireStick(c, Startup.WAKE);
                 break;

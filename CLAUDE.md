@@ -59,11 +59,12 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   the service reliably, and Back always reaches the app anyway.
 - `Commands.java`: phone commands on the same topic, starting with "!" (never shown):
   !home (strip on, TV on to the Fire Stick via Roku PowerOn + InputHDMI4, WELCOME HOME briefing that stays until a button),
-  !away (strip off; TV off only if it's just showing Wheel), !wake (before noon: TV on, boot +
-  briefing even if already shown), !ps5 / !xbox (TV on, input, strip color). Try one:
+  !away (strip off; TV off only if it's just showing Wheel), !wake (any time: TV on, boot +
+  briefing even if already shown, GOOD ___ by the time), !ps5 / !xbox (TV on, input, strip color). Try one:
   `--es command home`. Each is a one-action iPhone Shortcut/automation (Get Contents of URL, POST,
   body = the command).
-- Inbox: hold ☰ on Wheel: last 10 texts/emails from the past 7 days (Messages.history), up/down, OK opens, hold OK deletes, Back closes; unread items have a colored dot. No on-screen hints (Omar's call).
+- Inbox: hold ☰ on Wheel: last 10 texts/emails from the past 7 days (Messages.history), up/down, OK opens, hold OK deletes, Back closes; unread items have a colored dot; the chosen row scrolls sideways
+  when it's too long; opened messages shrink to fit all of it. No on-screen hints (Omar's call).
   Try it: `--ez inbox_demo true`.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
 - `Weather.java`: Open-Meteo (no key); MET Norway backup when it doesn't answer; last good reading saved and shown at start.

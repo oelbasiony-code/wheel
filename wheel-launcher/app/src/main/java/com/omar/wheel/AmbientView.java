@@ -204,6 +204,7 @@ final class AmbientView extends View {
         inbox = Messages.history(getContext());
         inboxSel = 0;
         inboxSince = System.currentTimeMillis();
+        inboxSelAt = inboxSince;
         iconText = null;
         Messages.markRead(getContext());
         poke();
@@ -220,9 +221,12 @@ final class AmbientView extends View {
         invalidate();
     }
 
+    private long inboxSelAt;   // when the selection last moved (its text scrolls from then)
+
     void inboxMove(int dir) {
         if (inbox == null || inbox.isEmpty()) return;
         inboxSel = Math.max(0, Math.min(inbox.size() - 1, inboxSel + dir));
+        inboxSelAt = System.currentTimeMillis();
         invalidate();
     }
 
@@ -294,7 +298,21 @@ final class AmbientView extends View {
             }
             DotFont.draw(c, it.mail ? "MAIL" : "MSG", left, ly, lp, lp * 0.36f, dot,
                     new int[]{it.mail ? WheelView.TICK_MAIL : WheelView.TICK_MSG}, a);
-            DotFont.draw(c, WheelView.fit(it.text, maxCols), left + labelW, y, p, p * 0.36f, dot, CLOCK, a);
+            float tx = left + labelW, room = maxCols * p;
+            float over = DotFont.cols(it.text) * p - room;
+            if (sel && over > 0) {
+                // The chosen one scrolls sideways so all of it can be read: wait, scroll, hold, repeat.
+                float pxPerMs = SCROLL_DOTS_PER_SEC * p / 1000f;
+                long cycle = SCROLL_WAIT_MS + (long) (over / pxPerMs) + SCROLL_HOLD_MS;
+                long tt = (now - inboxSelAt) % cycle;
+                float shift = Math.max(0f, Math.min(over, (tt - SCROLL_WAIT_MS) * pxPerMs));
+                c.save();
+                c.clipRect(tx - p * 0.5f, y - p, tx + room, y + 8 * p);
+                DotFont.draw(c, it.text, tx - shift, y, p, p * 0.36f, dot, CLOCK, a, tx - p, tx + room);
+                c.restore();
+            } else {
+                DotFont.draw(c, WheelView.fit(it.text, maxCols), tx, y, p, p * 0.36f, dot, CLOCK, a);
+            }
             String t = ago(it.time, now);
             DotFont.draw(c, t, left + panelW - DotFont.cols(t) * lp, ly, lp, lp * 0.36f, dot, DIM, a);
             y += rowH;
@@ -318,11 +336,18 @@ final class AmbientView extends View {
         // Dim everything behind it.
         c.drawColor(Doodles.withAlpha(0xD8000000, e));
 
+        // Big for short messages; smaller (and a wider card) for long ones, so all of it fits.
         float p = h / 130f;
         float cardW = w * 0.56f;
+        int maxCols = (int) ((cardW - 10 * p) / p);
+        java.util.List<String> lines = DotFont.wrap(message, maxCols, 100);
+        if (lines.size() > 5) {
+            p = h / 190f;
+            cardW = w * 0.7f;
+            maxCols = (int) ((cardW - 10 * p) / p);
+            lines = DotFont.wrap(message, maxCols, 10);
+        }
         float pad = p * 5;
-        int maxCols = (int) ((cardW - 2 * pad) / p);
-        java.util.List<String> lines = DotFont.wrap(message, maxCols, 7);
         float lineH = 11 * p;
         float labelP = p * 0.6f;
         float cardH = pad + 7 * labelP + p * 5 + (lines.size() - 1) * lineH + 7 * p + pad;
