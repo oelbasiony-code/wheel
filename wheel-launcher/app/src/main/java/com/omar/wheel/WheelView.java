@@ -528,10 +528,6 @@ final class WheelView extends View {
     static final float TICK_PAD_ROWS = 2.5f;
 
     // For the morning briefing.
-    String weatherNow() {
-        return weatherNow;
-    }
-
     String weatherRange() {
         return weatherRange;
     }
