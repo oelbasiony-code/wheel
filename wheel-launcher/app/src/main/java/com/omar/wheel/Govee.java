@@ -168,8 +168,8 @@ final class Govee {
     private static boolean isHome(State s) {
         boolean n = night();
         int k = n ? Config.NIGHT_LIGHT_K : Config.HOME_LIGHT_K;
-        int b = n ? Config.NIGHT_LIGHT_BRIGHTNESS : Config.HOME_LIGHT_BRIGHTNESS;
-        return s.rgb == 0 && s.kelvin == k && s.brightness == b;
+        // Brightness isn't compared: Govee's cloud always reports 100 whatever it is.
+        return s.rgb == 0 && s.kelvin == k && homeWasNight != null && homeWasNight == n;
     }
 
     /** True from 9 pm to 5 am (Config.NIGHT_FROM_HOUR / NIGHT_UNTIL_HOUR). */
