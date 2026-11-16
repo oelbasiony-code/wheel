@@ -28,6 +28,8 @@ final class RokuTv {
 
     private static final String PREFS = "wheel";
     private static final String K_IP = "roku_ip";
+    /** The TV's Wi-Fi + Ethernet MACs, learned from device-info, for Wake-on-LAN. */
+    private static final String K_MACS = "roku_macs";
     private static final Pattern LOCATION =
             Pattern.compile("(?im)^location:\\s*http://([0-9.]+):8060");
 
@@ -73,6 +75,55 @@ final class RokuTv {
             code = keypress(found, key);
         }
         return code == 200;
+    }
+
+    /**
+     * Turns the TV on, even from deep sleep. A Roku TV that's been off a while drops off
+     * Wi-Fi and ignores ECP, but it wakes on a Wake-on-LAN packet (supports-wake-on-wlan),
+     * so if PowerOn doesn't go through, send the magic packet and try again for ~20 s.
+     * Off the main thread.
+     */
+    static boolean powerOn(Context ctx) {
+        if (press(ctx, "PowerOn")) return true;
+        for (int i = 0; i < 10; i++) {
+            wakeOnLan(ctx);
+            try { Thread.sleep(2000); } catch (InterruptedException e) { return false; }
+            if (press(ctx, "PowerOn")) return true;
+        }
+        return false;
+    }
+
+    /** Sends the Wake-on-LAN magic packet to the TV's Wi-Fi and Ethernet addresses. */
+    private static void wakeOnLan(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String macs = sp.getString(K_MACS, Config.ROKU_TV_MACS);
+        DatagramSocket sock = null;
+        try {
+            sock = new DatagramSocket();
+            sock.setBroadcast(true);
+            InetAddress all = InetAddress.getByName("255.255.255.255");
+            String ip = Config.ROKU_TV_IP.isEmpty() ? sp.getString(K_IP, "") : Config.ROKU_TV_IP;
+            InetAddress subnet = ip.contains(".")
+                    ? InetAddress.getByName(ip.substring(0, ip.lastIndexOf('.')) + ".255") : null;
+            for (String mac : macs.split("\\s+")) {
+                String hex = mac.replace(":", "").replace("-", "");
+                if (hex.length() != 12) continue;
+                byte[] p = new byte[6 + 16 * 6];
+                for (int i = 0; i < 6; i++) p[i] = (byte) 0xff;
+                for (int r = 0; r < 16; r++) {
+                    for (int i = 0; i < 6; i++) {
+                        p[6 + r * 6 + i] = (byte) Integer.parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+                    }
+                }
+                for (int port : new int[] {9, 7}) {
+                    sock.send(new DatagramPacket(p, p.length, all, port));
+                    if (subnet != null) sock.send(new DatagramPacket(p, p.length, subnet, port));
+                }
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (sock != null) sock.close();
+        }
     }
 
     /** POST /keypress/InputHDMI2 -> HTTP status, or -1 if the TV can't be reached. */
@@ -149,12 +200,12 @@ final class RokuTv {
     static Boolean screenOn(Context ctx) {
         SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         String ip = Config.ROKU_TV_IP.isEmpty() ? sp.getString(K_IP, "") : Config.ROKU_TV_IP;
-        Boolean on = ip.isEmpty() ? null : powerMode(ip);
+        Boolean on = ip.isEmpty() ? null : powerMode(ip, sp);
         if (on == null && Config.ROKU_TV_IP.isEmpty()) {
             String found = discover(ctx);
             if (found == null) return null;
             sp.edit().putString(K_IP, found).apply();
-            on = powerMode(found);
+            on = powerMode(found, sp);
         }
         return on;
     }
@@ -180,7 +231,7 @@ final class RokuTv {
         }
     }
 
-    private static Boolean powerMode(String ip) {
+    private static Boolean powerMode(String ip, SharedPreferences sp) {
         HttpURLConnection c = null;
         try {
             c = (HttpURLConnection) new URL("http://" + ip + ":8060/query/device-info").openConnection();
@@ -188,6 +239,12 @@ final class RokuTv {
             c.setReadTimeout(3000);
             if (c.getResponseCode() != 200) return null;
             String body = new java.util.Scanner(c.getInputStream(), "UTF-8").useDelimiter("\\A").next();
+            Matcher mac = Pattern.compile("<(?:wifi|ethernet)-mac>([0-9a-fA-F:]{17})<").matcher(body);
+            StringBuilder macs = new StringBuilder();
+            while (mac.find()) macs.append(macs.length() > 0 ? " " : "").append(mac.group(1));
+            if (macs.length() > 0 && !macs.toString().equals(sp.getString(K_MACS, ""))) {
+                sp.edit().putString(K_MACS, macs.toString()).apply();
+            }
             Matcher m = Pattern.compile("<power-mode>([^<]*)</power-mode>").matcher(body);
             if (!m.find()) return null;
             return "PowerOn".equalsIgnoreCase(m.group(1).trim());

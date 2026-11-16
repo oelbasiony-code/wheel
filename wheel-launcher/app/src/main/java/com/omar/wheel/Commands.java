@@ -79,7 +79,7 @@ final class Commands {
     /** TV on (if it's off) and over to an input. */
     private static void toInput(Context c, String input) throws InterruptedException {
         if (!Boolean.TRUE.equals(RokuTv.screenOn(c))) {
-            RokuTv.press(c, "PowerOn");
+            RokuTv.powerOn(c);
             Thread.sleep(4000);
         }
         RokuTv.press(c, input);
@@ -93,7 +93,7 @@ final class Commands {
         Startup.holdAutoBoot();   // the TV turning on shouldn't also play the normal boot
         boolean wasOn = Boolean.TRUE.equals(RokuTv.screenOn(c));
         if (!wasOn) {
-            RokuTv.press(c, "PowerOn");
+            RokuTv.powerOn(c);
             Thread.sleep(4000);
         }
         if (!Config.FIRE_TV_APP_ID.equals(RokuTv.activeApp(c))) RokuTv.press(c, Config.FIRE_TV_INPUT);

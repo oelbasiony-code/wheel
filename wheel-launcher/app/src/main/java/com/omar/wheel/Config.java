@@ -145,6 +145,8 @@ final class Config {
 
     /** The Roku TV's IP address (Settings > Network > About). "" = find it on the network. */
     static final String ROKU_TV_IP = "";
+    /** The TV's Wi-Fi and Ethernet MACs for Wake-on-LAN (Wheel also learns them by itself). */
+    static final String ROKU_TV_MACS = "60:92:c8:f6:f9:01 60:92:c8:f8:28:6d";
 
     /**
      * The Govee strip's light while you're on Wheel (and when it turns on with the TV):

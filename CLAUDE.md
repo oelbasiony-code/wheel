@@ -70,6 +70,8 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 - `Weather.java`: Open-Meteo (no key); MET Norway backup when it doesn't answer; last good reading saved and shown at start.
 - `RokuTv.java`: PLAYSTATION / XBOX tiles switch the TV input over Roku ECP (port 8060).
   PS5 = InputHDMI1, Xbox = InputHDMI2. TV must have Control by mobile apps = Enabled.
+  After a while off, the TV drops off Wi-Fi and ignores ECP; RokuTv.powerOn sends Wake-on-LAN
+  (MACs learned from device-info, Config.ROKU_TV_MACS fallback) and retries PowerOn for ~20 s.
 - `HomeWatcher.java`: accessibility service + logcat watcher that sends the Home button to Wheel.
   Also knows when the TV turns on/off, for Govee and Startup: the stick does NOT sleep when the
   Roku TV turns off, so it polls the TV's power-mode over ECP every 2 s (RokuTv.screenOn).
