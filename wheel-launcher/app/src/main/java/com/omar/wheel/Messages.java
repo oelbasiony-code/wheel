@@ -251,6 +251,8 @@ final class Messages {
 
     private static final String K_HISTORY = "msg_history";
     private static final int HISTORY_MAX = 10;
+    /** Inbox items older than this drop off by themselves. */
+    private static final long HISTORY_DAYS_MS = 7 * 24 * 3600000L;
 
     static final class Item {
         final String text;
@@ -271,6 +273,27 @@ final class Messages {
             out.put(new JSONObject().put("x", text).put("m", mail).put("t", time));
             for (int i = 0; i < old.length() && out.length() < HISTORY_MAX; i++) out.put(old.get(i));
             p.edit().putString(K_HISTORY, out.toString()).apply();
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Hold OK in the inbox: forget this one. */
+    static void deleteFromHistory(Context c, Item gone) {
+        SharedPreferences p = sp(c);
+        try {
+            org.json.JSONArray a = new org.json.JSONArray(p.getString(K_HISTORY, "[]"));
+            org.json.JSONArray out = new org.json.JSONArray();
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.getJSONObject(i);
+                if (o.optLong("t") == gone.time && o.optString("x").equals(gone.text)) continue;
+                out.put(o);
+            }
+            SharedPreferences.Editor e = p.edit().putString(K_HISTORY, out.toString());
+            // Also off the card / Play-Pause if it was the newest one.
+            if (gone.text.equals(p.getString(gone.mail ? K_MAIL_TEXT : K_TEXT, null))) {
+                e.remove(gone.mail ? K_MAIL_TEXT : K_TEXT).remove(gone.mail ? K_MAIL_TIME : K_TIME);
+            }
+            e.apply();
         } catch (Exception ignored) {
         }
     }
@@ -300,13 +323,15 @@ final class Messages {
         List<Item> out = new ArrayList<>();
         try {
             org.json.JSONArray a = new org.json.JSONArray(sp(c).getString(K_HISTORY, "[]"));
+            long old = System.currentTimeMillis() - HISTORY_DAYS_MS;
             for (int i = 0; i < a.length(); i++) {
                 JSONObject o = a.getJSONObject(i);
+                if (o.optLong("t") < old) continue;
                 out.add(new Item(o.optString("x"), o.optBoolean("m"), o.optLong("t")));
             }
         } catch (Exception ignored) {
         }
-        if (out.isEmpty()) {
+        if (out.isEmpty() && !sp(c).contains(K_HISTORY)) {
             // Before the inbox existed only the newest text and email were kept: show those.
             SharedPreferences p = sp(c);
             String m = p.getString(K_TEXT, null), e = p.getString(K_MAIL_TEXT, null);

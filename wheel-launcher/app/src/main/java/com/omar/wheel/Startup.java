@@ -263,8 +263,7 @@ final class Startup {
         } else {
             mLine = "";
             if (m[0] > 0) mLine = m[0] + (m[0] == 1 ? " MESSAGE" : " MESSAGES");
-            if (m[1] > 0) mLine += (mLine.isEmpty() ? "" : "  ") + m[1] + " EMAIL" + (m[1] == 1 ? "" : "S");
-            mLine += "   " + DotFont.MENU + " TO READ";
+            if (m[1] > 0) mLine += (mLine.isEmpty() ? "" : ", ") + m[1] + " EMAIL" + (m[1] == 1 ? "" : "S");
         }
         String[] labels = {"WEATHER", "FIRST UP", "MISSED"};
         String[] vals = {DotFont.clean(wLine), DotFont.clean(eLine), DotFont.clean(mLine)};

@@ -27,6 +27,18 @@ public final class MainActivity extends Activity implements WheelView.Host {
     private boolean okDown, okLongFired;
     private boolean menuDown, menuLongFired;
 
+    /** In the inbox, holding OK deletes the chosen item. */
+    private boolean inboxOkDown, inboxOkLong;
+    private final Runnable inboxDelete = new Runnable() {
+        @Override
+        public void run() {
+            if (inboxOkDown && ambient.inboxShowing()) {
+                inboxOkLong = true;
+                ambient.inboxDeleteSelected();
+            }
+        }
+    };
+
     /** Holding ☰ opens the inbox (a short press is the usual ☰). */
     private final Runnable menuLong = new Runnable() {
         @Override
@@ -333,9 +345,18 @@ public final class MainActivity extends Activity implements WheelView.Host {
             int k = e.getKeyCode();
             if (down && k == KeyEvent.KEYCODE_DPAD_UP) ambient.inboxMove(-1);
             else if (down && k == KeyEvent.KEYCODE_DPAD_DOWN) ambient.inboxMove(1);
-            else if (act == KeyEvent.ACTION_UP && (k == KeyEvent.KEYCODE_DPAD_CENTER
-                    || k == KeyEvent.KEYCODE_ENTER || k == KeyEvent.KEYCODE_BUTTON_A)) {
-                if (!menuLongFired) ambient.inboxOpenSelected();
+            else if (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER
+                    || k == KeyEvent.KEYCODE_BUTTON_A) {
+                // Press: open. Hold: delete.
+                if (down && e.getRepeatCount() == 0) {
+                    inboxOkDown = true;
+                    inboxOkLong = false;
+                    h.postDelayed(inboxDelete, LONG_PRESS_MS);
+                } else if (act == KeyEvent.ACTION_UP) {
+                    h.removeCallbacks(inboxDelete);
+                    if (inboxOkDown && !inboxOkLong) ambient.inboxOpenSelected();
+                    inboxOkDown = false;
+                }
             } else if (act == KeyEvent.ACTION_UP && (k == KeyEvent.KEYCODE_BACK
                     || k == KeyEvent.KEYCODE_MENU)) {
                 if (k == KeyEvent.KEYCODE_MENU && menuLongFired) {

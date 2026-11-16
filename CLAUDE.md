@@ -61,7 +61,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   briefing even if already shown), !ps5 / !xbox (TV on, input, strip color). Try one:
   `--es command home`. Each is a one-action iPhone Shortcut/automation (Get Contents of URL, POST,
   body = the command).
-- Inbox: hold ☰ on Wheel: last 10 texts/emails (Messages.history), up/down, OK opens, Back closes.
+- Inbox: hold ☰ on Wheel: last 10 texts/emails from the past 7 days (Messages.history), up/down, OK opens, hold OK deletes, Back closes. No on-screen hints (Omar's call).
   Try it: `--ez inbox_demo true`.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
 - `Weather.java`: Open-Meteo (no key); MET Norway backup when it doesn't answer; last good reading saved and shown at start.

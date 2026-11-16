@@ -225,6 +225,14 @@ final class AmbientView extends View {
         invalidate();
     }
 
+    /** Hold OK in the inbox: delete the chosen one. */
+    void inboxDeleteSelected() {
+        if (inbox == null || inbox.isEmpty()) return;
+        Messages.deleteFromHistory(getContext(), inbox.remove(inboxSel));
+        inboxSel = Math.max(0, Math.min(inboxSel, inbox.size() - 1));
+        invalidate();
+    }
+
     /** OK in the inbox: open the chosen one big (Back from there closes it). */
     void inboxOpenSelected() {
         if (inbox == null || inbox.isEmpty()) return;
@@ -254,9 +262,6 @@ final class AmbientView extends View {
         float left = (w - panelW) / 2f;
         float top = h * 0.14f;
         DotFont.draw(c, "INBOX", left, top, lp, lp * 0.36f, dot, CLOCK, e);
-        String hint = "OK OPENS   BACK CLOSES";
-        DotFont.draw(c, hint, left + panelW - DotFont.cols(hint) * lp * 0.8f, top, lp * 0.8f,
-                lp * 0.8f * 0.36f, dot, new int[]{0xFF6E6A62}, e);
         float y = top + 7 * lp + p * 8;
 
         if (inbox.isEmpty()) {
