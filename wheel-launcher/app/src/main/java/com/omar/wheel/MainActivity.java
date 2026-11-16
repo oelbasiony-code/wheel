@@ -52,7 +52,11 @@ public final class MainActivity extends Activity implements WheelView.Host {
                     @Override
                     public void onAgenda(java.util.List<Agenda.Event> events) {
                         fetchingAgenda = false;
-                        wheel.setNoCalendarLink(!Agenda.hasLink(MainActivity.this));
+                        long now = System.currentTimeMillis();
+                        wheel.setCalendarNote(!Agenda.hasLink(MainActivity.this) ? "NO LINK YET"
+                                : events == null ? "CAN'T LOAD CALENDAR"
+                                : Agenda.lines(events, now, java.util.TimeZone.getDefault(), 1).isEmpty()
+                                        ? "NOTHING IN THE NEXT 2 WEEKS" : null);
                         if (events != null) {
                             lastAgenda = System.currentTimeMillis();
                             wheel.setAgenda(events);

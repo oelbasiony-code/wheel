@@ -65,7 +65,7 @@ final class Agenda {
     private static List<Event> load(List<String> links) {
         if (links.isEmpty()) return null;
         long now = System.currentTimeMillis();
-        long from = now - DAY, to = now + 3 * DAY;
+        long from = now - DAY, to = now + 14 * DAY;   // two weeks, for "next up" when today is empty
         List<Event> all = new ArrayList<>();
         boolean any = false;
         for (String link : links) {
@@ -142,10 +142,13 @@ final class Agenda {
             for (Event e : events) {
                 if (e.start < tomorrow) continue;
                 boolean isTomorrow = e.start < tomorrow + 24 * 3600000L;
+                boolean thisWeek = e.start < tomorrow + 6 * 24 * 3600000L;
                 Calendar d = Calendar.getInstance(tz);
                 d.setTimeInMillis(e.start);
                 String day = isTomorrow ? "TOMORROW"
-                        : new String[]{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"}[d.get(Calendar.DAY_OF_WEEK) - 1];
+                        : thisWeek ? new String[]{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"}[d.get(Calendar.DAY_OF_WEEK) - 1]
+                        : new String[]{"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"}[d.get(Calendar.MONTH)]
+                                + " " + d.get(Calendar.DAY_OF_MONTH);
                 out.add(new String[]{e.allDay ? day : day + " " + clock(e.start, tz), e.title});
                 break;
             }

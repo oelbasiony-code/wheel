@@ -554,7 +554,7 @@ final class WheelView extends View {
         java.util.ArrayList<Tick> out = new java.util.ArrayList<>();
         TimeZone tz = TimeZone.getDefault();
         for (String[] l : Agenda.lines(agenda, now, tz, 3)) out.add(new Tick(l[0], l[1], TICK_CAL));
-        if (noCalendarLink) out.add(new Tick("CAL", "NO LINK YET", TICK_CAL));
+        if (calendarNote != null) out.add(new Tick("CAL", calendarNote, TICK_CAL));
 
         // The next train isn't on the card: the train itself rolls by before it leaves.
         out.add(new Tick("WORD", Words.today(now, tz), TICK_WORD));
@@ -569,11 +569,14 @@ final class WheelView extends View {
         return out;
     }
 
-    private boolean noCalendarLink;
+    private String calendarNote;
 
-    /** No calendar.txt on the stick: the card says so instead of staying blank. */
-    void setNoCalendarLink(boolean none) {
-        noCalendarLink = none;
+    /**
+     * Why the calendar has nothing to show, said on the card instead of staying blank:
+     * NO LINK YET, CAN'T LOAD CALENDAR, NOTHING IN THE NEXT 2 WEEKS. null = all good.
+     */
+    void setCalendarNote(String note) {
+        calendarNote = note;
     }
 
     void setAgenda(List<Agenda.Event> a) {
