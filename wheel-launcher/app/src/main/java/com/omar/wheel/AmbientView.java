@@ -223,16 +223,20 @@ final class AmbientView extends View {
 
     private long inboxSelAt;   // when the selection last moved (its text scrolls from then)
 
+    /** inboxSel == CLEAR_ALL: the CLEAR ALL button at the top is chosen. */
+    private static final int CLEAR_ALL = -1;
+
     void inboxMove(int dir) {
         if (inbox == null || inbox.isEmpty()) return;
-        inboxSel = Math.max(0, Math.min(inbox.size() - 1, inboxSel + dir));
+        // Up from the first message reaches CLEAR ALL.
+        inboxSel = Math.max(CLEAR_ALL, Math.min(inbox.size() - 1, inboxSel + dir));
         inboxSelAt = System.currentTimeMillis();
         invalidate();
     }
 
     /** Hold OK in the inbox: delete the chosen one. */
     void inboxDeleteSelected() {
-        if (inbox == null || inbox.isEmpty()) return;
+        if (inbox == null || inbox.isEmpty() || inboxSel == CLEAR_ALL) return;
         Messages.deleteFromHistory(getContext(), inbox.remove(inboxSel));
         inboxSel = Math.max(0, Math.min(inboxSel, inbox.size() - 1));
         invalidate();
@@ -241,6 +245,13 @@ final class AmbientView extends View {
     /** OK in the inbox: open the chosen one big (Back from there closes it). */
     void inboxOpenSelected() {
         if (inbox == null || inbox.isEmpty()) return;
+        if (inboxSel == CLEAR_ALL) {
+            Messages.clearHistory(getContext());
+            inbox.clear();
+            inboxSel = 0;
+            invalidate();
+            return;
+        }
         Messages.Item it = inbox.get(inboxSel);
         inbox = null;
         openMessage(it.text, it.mail);
@@ -267,6 +278,20 @@ final class AmbientView extends View {
         float left = (w - panelW) / 2f;
         float top = h * 0.14f;
         DotFont.draw(c, "INBOX", left, top, lp, lp * 0.36f, dot, CLOCK, e);
+        if (!inbox.isEmpty()) {
+            // The CLEAR ALL button, top right; up from the first message chooses it.
+            String ca = "CLEAR ALL";
+            float cw = DotFont.cols(ca) * lp;
+            float cx = left + panelW - cw;
+            boolean on = inboxSel == CLEAR_ALL;
+            if (on) {
+                dot.setColor(Doodles.withAlpha(0xFF15171A, e));
+                c.drawRoundRect(new android.graphics.RectF(cx - p * 3, top - p * 2.5f, cx + cw + p * 3,
+                        top + 7 * lp + p * 2.5f), p * 2, p * 2, dot);
+            }
+            DotFont.draw(c, ca, cx, top, lp, lp * 0.36f, dot,
+                    new int[]{on ? WheelView.TICK_CAL : 0xFF6E6A62}, e);
+        }
         float y = top + 7 * lp + p * 8;
 
         if (inbox.isEmpty()) {
@@ -274,7 +299,7 @@ final class AmbientView extends View {
             return;
         }
         int visible = (int) ((h * 0.92f - y) / rowH);
-        int first = Math.max(0, Math.min(inboxSel - visible / 2, inbox.size() - visible));
+        int first = Math.max(0, Math.min(Math.max(0, inboxSel) - visible / 2, inbox.size() - visible));
         float labelW = DotFont.cols("MAIL") * lp + p * 5;
         float timeW = DotFont.cols("59 MIN") * lp + p * 4;
         int maxCols = (int) ((panelW - labelW - timeW - p * 6) / p);

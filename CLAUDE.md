@@ -62,7 +62,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   briefing even if already shown, GOOD ___ by the time), !ps5 / !xbox (TV on, input, strip color). Try one:
   `--es command home`. The same command twice within 30 s runs once (the phone sometimes doubles). Each is a one-action iPhone Shortcut/automation (Get Contents of URL, POST,
   body = the command).
-- Inbox: hold ☰ on Wheel: last 10 texts/emails from the past 7 days (Messages.history), up/down, OK opens, hold OK deletes, Back closes; unread items have a colored dot; the chosen row scrolls sideways
+- Inbox: hold ☰ on Wheel: last 10 texts/emails from the past 7 days (Messages.history), up/down, OK opens, hold OK deletes, CLEAR ALL (top right; up from the first message, OK) empties it, Back closes; unread items have a colored dot; the chosen row scrolls sideways
   when it's too long; opened messages shrink to fit all of it. No on-screen hints (Omar's call).
   Try it: `--ez inbox_demo true`.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.

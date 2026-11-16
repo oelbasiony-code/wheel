@@ -300,6 +300,13 @@ final class Messages {
         }
     }
 
+    /** CLEAR ALL in the inbox: forget every one, and the card says NO NEW ... */
+    static void clearHistory(Context c) {
+        sp(c).edit().putString(K_HISTORY, "[]")
+                .putBoolean("msg_opened", true).putBoolean("mail_opened", true)
+                .putBoolean(K_UNREAD, false).apply();
+    }
+
     /** Hold OK in the inbox: forget this one. */
     static void deleteFromHistory(Context c, Item gone) {
         SharedPreferences p = sp(c);
