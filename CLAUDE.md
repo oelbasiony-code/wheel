@@ -55,7 +55,8 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 - `RokuTv.java`: PLAYSTATION / XBOX tiles switch the TV input over Roku ECP (port 8060).
   PS5 = InputHDMI1, Xbox = InputHDMI2. TV must have Control by mobile apps = Enabled.
 - `HomeWatcher.java`: accessibility service + logcat watcher that sends the Home button to Wheel.
-  Also watches screen on/off (the stick sleeps when the TV turns off) for Govee and Startup.
+  Also knows when the TV turns on/off, for Govee and Startup: the stick does NOT sleep when the
+  Roku TV turns off, so it polls the TV's power-mode over ECP every 10 s (RokuTv.screenOn).
 - `Govee.java`: the H615C strip. LAN API first (finds the strip by multicast scan, or
   `--es govee_ip 'IP'`); Govee cloud key as fallback (`--es govee_key 'KEY'`, secret, not in
   repo). Lights on/off with the TV only when the tile LIGHTS FOLLOW TV (all-apps list) is ON; off by default; opening an app

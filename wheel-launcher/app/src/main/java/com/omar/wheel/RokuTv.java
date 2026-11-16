@@ -126,5 +126,42 @@ final class RokuTv {
         return null;
     }
 
+    /**
+     * Is the TV's screen on? Roku reports "PowerOn" while you're watching and something
+     * else (DisplayOff, Ready, Suspend...) when it's off. null = couldn't ask.
+     * The Fire Stick stays awake when the TV turns off, so this is how Wheel knows.
+     * Call off the main thread.
+     */
+    static Boolean screenOn(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String ip = Config.ROKU_TV_IP.isEmpty() ? sp.getString(K_IP, "") : Config.ROKU_TV_IP;
+        Boolean on = ip.isEmpty() ? null : powerMode(ip);
+        if (on == null && Config.ROKU_TV_IP.isEmpty()) {
+            String found = discover(ctx);
+            if (found == null) return null;
+            sp.edit().putString(K_IP, found).apply();
+            on = powerMode(found);
+        }
+        return on;
+    }
+
+    private static Boolean powerMode(String ip) {
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new URL("http://" + ip + ":8060/query/device-info").openConnection();
+            c.setConnectTimeout(3000);
+            c.setReadTimeout(3000);
+            if (c.getResponseCode() != 200) return null;
+            String body = new java.util.Scanner(c.getInputStream(), "UTF-8").useDelimiter("\\A").next();
+            Matcher m = Pattern.compile("<power-mode>([^<]*)</power-mode>").matcher(body);
+            if (!m.find()) return null;
+            return "PowerOn".equalsIgnoreCase(m.group(1).trim());
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (c != null) c.disconnect();
+        }
+    }
+
     private RokuTv() {}
 }

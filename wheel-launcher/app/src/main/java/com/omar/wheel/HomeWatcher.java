@@ -88,6 +88,47 @@ public final class HomeWatcher extends AccessibilityService {
         f.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(screen, f);
         screenWatch = true;
+        // The stick usually stays awake when the TV turns off, so also ask the TV itself.
+        startTvWatch();
+    }
+
+    // ---------------------------------------------------------------- TV on/off (asks the Roku)
+
+    private static final long TV_POLL_MS = 10 * 1000L;
+    private volatile boolean tvWatching;
+    private Thread tvThread;
+    private Boolean tvWasOn;
+
+    private void startTvWatch() {
+        if (tvWatching) return;
+        tvWatching = true;
+        final android.content.Context c = getApplicationContext();
+        tvThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (tvWatching) {
+                    Boolean on = RokuTv.screenOn(c);
+                    if (on != null) {
+                        if (tvWasOn != null && !on.equals(tvWasOn)) {
+                            Log.d(TAG, "tv " + (on ? "on" : "off"));
+                            if (on) {
+                                Govee.tvOn(c);
+                                Startup.tvOn();
+                            } else {
+                                Govee.tvOff(c);
+                            }
+                        }
+                        tvWasOn = on;
+                    }
+                    try {
+                        Thread.sleep(TV_POLL_MS);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+            }
+        }, "wheel-tv");
+        tvThread.start();
     }
 
     private boolean screenWatch;
@@ -107,6 +148,8 @@ public final class HomeWatcher extends AccessibilityService {
     public void onDestroy() {
         stopLogWatch();
         Messages.removeListener(onMessage);
+        tvWatching = false;
+        if (tvThread != null) tvThread.interrupt();
         if (screenWatch) {
             try {
                 unregisterReceiver(screen);
