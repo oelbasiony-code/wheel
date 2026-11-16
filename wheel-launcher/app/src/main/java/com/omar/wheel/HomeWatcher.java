@@ -122,6 +122,7 @@ public final class HomeWatcher extends AccessibilityService {
                                 tvOnAt = System.currentTimeMillis();   // startup waits for the picture
                             } else {
                                 Govee.tvOff(c);
+                                Startup.tvOff();   // black until the boot, so no glimpse of the wheel
                                 tvOnAt = 0;
                             }
                         }
@@ -134,6 +135,7 @@ public final class HomeWatcher extends AccessibilityService {
                     if (tvOnAt > 0) {
                         if (System.currentTimeMillis() - tvOnAt > WAIT_FOR_INPUT_MS) {
                             tvOnAt = 0;   // never came to the Fire Stick; skip it this time
+                            Startup.clearDark();
                         } else if (Config.FIRE_TV_APP_ID.equals(RokuTv.activeApp(c))) {
                             // On the Fire Stick: give the picture a moment, then play.
                             tvOnAt = 0;

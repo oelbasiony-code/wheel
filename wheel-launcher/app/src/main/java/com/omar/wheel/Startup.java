@@ -54,6 +54,7 @@ final class Startup {
 
     /** Still moving (else AmbientView can drop back to its slow frame rate). */
     static boolean animating() {
+        if (dark && bootAt < 0 && briefAt < 0) return false;
         long up = SystemClock.uptimeMillis();
         if (bootAt >= 0 && up - bootAt < BOOT_MS) return true;
         return briefAt >= 0 && !(briefHold && up - briefAt > 5000);
@@ -78,6 +79,21 @@ final class Startup {
 
     /** Set by Wheel while it's on screen, in case the TV comes on with Wheel already up. */
     static volatile Runnable whileShown;
+
+    /**
+     * The TV went off: Wheel goes black right away and stays black until the boot starts,
+     * so turning the TV on never shows a glimpse of the wheel first.
+     */
+    private static volatile boolean dark;
+
+    static void tvOff() {
+        dark = true;
+    }
+
+    /** The TV came on but never went to the Fire Stick: stop waiting in the dark. */
+    static void clearDark() {
+        dark = false;
+    }
 
     static void tvOn() {
         if (SystemClock.uptimeMillis() < noAutoBootUntil) return;   // a phone command has it
@@ -113,6 +129,7 @@ final class Startup {
     }
 
     static void play(boolean withBriefing) {
+        dark = false;          // the boot draws its own black from the first frame
         bootPending = false;   // a demo replaces the automatic one
         briefTitle = null;
         briefHold = true;      // every briefing stays until a button (Omar's call)
@@ -122,6 +139,7 @@ final class Startup {
     }
 
     static void playBriefing() {
+        dark = false;
         bootPending = false;
         briefTitle = null;
         briefHold = true;
@@ -130,6 +148,7 @@ final class Startup {
     }
 
     static boolean showing() {
+        if (dark) return true;
         long up = SystemClock.uptimeMillis();
         if (bootAt >= 0 && up - bootAt < BOOT_MS) return true;
         return briefAt >= 0 && up >= briefAt - 1 && briefT(up) < BRIEF_MS + BRIEF_OUT_MS;
@@ -137,6 +156,7 @@ final class Startup {
 
     /** True while the screen is fully covered (nothing underneath needs drawing). */
     static boolean coversAll() {
+        if (dark) return true;
         long up = SystemClock.uptimeMillis();
         if (bootAt >= 0 && up - bootAt < FLY_MS + HOLD_MS + OUT_MS) return true;
         return briefAt >= 0 && up - briefAt > BRIEF_IN_MS && briefT(up) < BRIEF_MS;
@@ -144,6 +164,10 @@ final class Startup {
 
     /** Any button: skip what's playing. The briefing fades out instead of cutting. */
     static void skip() {
+        if (dark) {
+            dark = false;   // a button while waiting in the dark: just show the wheel
+            return;
+        }
         long up = SystemClock.uptimeMillis();
         if (bootAt >= 0 && up - bootAt < BOOT_MS) {
             bootAt = -1;
@@ -178,6 +202,11 @@ final class Startup {
 
     static void draw(Canvas c, Paint dot, float w, float h, WheelView wheel) {
         long up = SystemClock.uptimeMillis();
+        if (dark && bootAt < 0 && briefAt < 0) {
+            dot.setColor(0xFF000000);
+            c.drawRect(0, 0, w, h, dot);
+            return;
+        }
         if (bootAt >= 0) {
             long t = up - bootAt;
             if (t < BOOT_MS) {
