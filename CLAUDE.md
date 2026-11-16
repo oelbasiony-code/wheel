@@ -41,11 +41,13 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   POST sender + text/subject to the topic). A Google Apps Script route was tried and dropped:
   Google's script servers get "Address unavailable" from ntfy.sh.
 - `MessageOverlay.java`: the banner (top-right, 5 s, like a phone notification). Over other
-  apps HomeWatcher adds it as an overlay; on Wheel, AmbientView draws the same banner (with
-  "PLAY OPENS"). It stays on the card as MSG for 2 hours. Play/Pause on Wheel opens the last
+  apps HomeWatcher adds it as an overlay; on Wheel, AmbientView draws the same banner (no hints). It stays on the card as MSG for 2 hours. Play/Pause on Wheel opens the last
   message big in the middle; Play/Pause, Back or any button closes it. Do Not Disturb (tile in
   the all-apps list, ☰ on Wheel): no banners over shows; the banner shows when you're back on Wheel.
   An empty body arrives from ntfy as "triggered"; Wheel then shows just the title.
+- iPhone side (working): Shortcuts Message automation, Get Contents of URL, POST to the topic
+  URL, no body, one header Title = [Sender] : [Message]. JSON to https://ntfy.sh/ failed from
+  the phone ("network connection was lost"); a File body came through empty.
   Don't rely on catching remote keys in HomeWatcher: on this stick key filtering didn't reach
   the service reliably, and Back always reaches the app anyway.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.

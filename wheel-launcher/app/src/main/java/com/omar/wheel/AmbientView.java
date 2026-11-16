@@ -176,7 +176,7 @@ final class AmbientView extends View {
             banner = null;
             return;
         }
-        MessageOverlay.drawBanner(c, getWidth(), getHeight(), banner, "PLAY OPENS",
+        MessageOverlay.drawBanner(c, getWidth(), getHeight(), banner,
                 bannerSince, dot, bannerBox);
     }
 
@@ -206,9 +206,6 @@ final class AmbientView extends View {
         float ty = y + pad;
         DotFont.draw(c, "MESSAGE", x + pad, ty, labelP, labelP * 0.36f, dot,
                 new int[]{WheelView.TICK_MSG}, e);
-        String hint = "BACK CLOSES";
-        DotFont.draw(c, hint, x + cardW - pad - DotFont.cols(hint) * labelP, ty, labelP,
-                labelP * 0.36f, dot, new int[]{0xFF6E6A62}, e);
         ty += 7 * labelP + p * 5;
         for (String line : lines) {
             DotFont.draw(c, line, x + pad, ty, p, p * 0.36f, dot, CLOCK, e);

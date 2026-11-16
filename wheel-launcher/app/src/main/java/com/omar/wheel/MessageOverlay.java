@@ -38,15 +38,15 @@ final class MessageOverlay extends View {
     @Override
     protected void onDraw(Canvas c) {
         if (text == null) return;
-        if (!drawBanner(c, getWidth(), getHeight(), text, null, since, dot, box)) return;
+        if (!drawBanner(c, getWidth(), getHeight(), text, since, dot, box)) return;
         postInvalidateOnAnimation();
     }
 
     /**
      * Draws the banner (top-right card) and says whether it's still sliding in.
-     * Wheel draws the same banner itself, with a hint line ("PLAY OPENS") under the label.
+     * Wheel draws the same banner itself.
      */
-    static boolean drawBanner(Canvas c, float w, float h, String text, String hint, long since,
+    static boolean drawBanner(Canvas c, float w, float h, String text, long since,
                               Paint dot, RectF box) {
         float k = Math.min(1f, (SystemClock.uptimeMillis() - since) / (float) IN_MS);
         float e = 1f - (1f - k) * (1f - k) * (1f - k);   // ease out
@@ -81,12 +81,6 @@ final class MessageOverlay extends View {
         float y = top + pad;
         DotFont.draw(c, "MESSAGE", x + pad, y, labelP, labelP * 0.36f, dot,
                 new int[]{WheelView.TICK_MSG}, e);
-        if (hint != null) {
-            // Dim, on the right of the label row.
-            float hw = DotFont.cols(hint) * labelP;
-            DotFont.draw(c, hint, right - pad - hw, y, labelP, labelP * 0.36f, dot,
-                    new int[]{0xFF6E6A62}, e);
-        }
         y += 7 * labelP + p * 4;
         for (String line : lines) {
             DotFont.draw(c, line, x + pad, y, p, p * 0.36f, dot, new int[]{CREAM}, e);
