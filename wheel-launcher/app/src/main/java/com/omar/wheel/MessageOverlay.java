@@ -27,16 +27,15 @@ final class MessageOverlay extends View {
             "#.........#",
             "###########",
     };
-    /** Texts get a chat bubble (same size as the envelope), so you can tell at a glance. */
+    /** Texts get a solid chat bubble with three dots cut out, so you can tell at a glance. */
     private static final String[] BUBBLE = {
-            ".#########.",
-            "#.........#",
-            "#..#.#.#..#",
-            "#.........#",
-            ".#########.",
-            "...##......",
-            "..##.......",
-            ".#.........",
+            ".#######.",
+            "#########",
+            "##.#.#.##",
+            "#########",
+            ".#######.",
+            "..##.....",
+            ".#.......",
     };
     private static final int CREAM = 0xFFEDE6DA, DIM = 0xFF6E6A62;
     private static final long IN_MS = 500;
