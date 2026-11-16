@@ -35,18 +35,17 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   to a private topic (random name, works like a password, NOT in the repo), set with
   `./adb shell "am start -n com.omar.wheel/.MainActivity --es message_topic 'TOPIC'"` and saved
   in SharedPreferences. The listener runs inside HomeWatcher so it works during shows.
-  Anything posted to https://ntfy.sh/TOPIC shows up. It is NOT connected to iMessage, Gmail or
-  iPhone notifications (Apple blocks reading notifications). Planned feeds into the topic:
-  iPhone Shortcuts automations (Message / Email triggers) and maybe a Gmail Apps Script.
-- Email: ntfy's email address for the topic (ntfy-TOPIC@ntfy.sh, NOT in the repo) drops the
-  sender, so `scripts/gmail-to-tv.gs` (Apps Script in the BU account, every minute) emails it
-  "Sender Name: Subject" with body "--\nwheel" (shows as MAIL, title only). Gmail forwarding
-  to that address should be OFF once the script runs (else doubles). subject = title, body = message. Messages.tidy() keeps the first lines and drops the
-  sign-off/signature. The iPhone Email trigger never fired, so email doesn't use the phone.
-- Feeding the topic is done on Omar's iPhone with Shortcuts automations (Message trigger for
-  chosen people; Email trigger on his Gmail account, which he adds to Apple's Mail app; both
-  POST sender + text/subject to the topic). A Google Apps Script route was tried and dropped:
-  Google's script servers get "Address unavailable" from ntfy.sh.
+  Anything posted to https://ntfy.sh/TOPIC shows up. It is NOT connected to iMessage or iPhone
+  notifications directly (Apple blocks reading them); texts and mail are fed in as below.
+- Email: BU Gmail and personal Gmail both FORWARD to ntfy's email address for the topic
+  (ntfy-TOPIC@ntfy.sh, NOT in the repo): subject = title, body = message (shows as MAIL).
+  ntfy drops the sender, so mail shows the subject, not who sent it (Omar's OK with that).
+  `scripts/gmail-to-tv.gs` (Apps Script: "Sender: Subject" every minute) exists but is NOT set
+  up; if it ever is, turn forwarding off or every email shows twice. Messages.tidy() keeps the
+  first lines and drops the sign-off/signature. The iPhone Email trigger never fired, so email
+  doesn't use the phone.
+- Texts: iPhone Shortcuts Message automations (chosen senders, plus one with "contains a space"),
+  Find Contacts by Sender → Get Name, POST to the topic with header Title = [Name]|[Sender] : [Message].
 - `MessageOverlay.java`: the envelope icon (top-right, 10 s, dot teal = text, orange = mail),
   like a phone's notification icon. Over apps HomeWatcher shows it (icon only; ☰ can't be caught
   there, so it stays unread). On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
@@ -142,15 +141,18 @@ the top.
 ## Status (Nov 16)
 
 All of Omar's picks are built and on the TV: messages (texts via iPhone Shortcut with contact
-names; BU email via Gmail forwarding to ntfy's email address), the envelope icon + MSG/MAIL
+names; BU + personal Gmail forwarding to ntfy's email address), the envelope icon + MSG/MAIL
 cards, a calm sleep screen (dino, time, date, weather only; no news or card), Govee (cloud API key; app colors at 100%, home light candlelight 2200K by day / 2000K dimmer
 9 pm-5 am, LIGHTS FOLLOW TV tile, TV on/off from the Roku's power-mode), the startup
 sequence, the daily briefing (first TV-on at 5 am or later), the calendar
-countdown on the card, WORD OF DAY, centered idle mode.
+countdown on the card, WORD OF DAY, centered idle mode, NYT on the card, phone commands
+(!home / !away / !wake / !ps5 / !xbox, all tested), the inbox (hold ☰), the train's smoke and
+whistle, no glimpse of the wheel when the TV turns on.
 
 Ideas Omar liked but hasn't picked yet: departure warning ("LEAVE IN 8 MIN" + amber strip),
-focus when gaming (PS5/Xbox turns on Do Not Disturb), sleep timer for TV + strip, phone
-quick actions through the topic ("movie mode"), weekly recap in Sunday's briefing.
+sleep timer for TV + strip, more phone quick actions through the topic ("movie mode"),
+weekly recap in Sunday's briefing, MBTA delay alerts on the card, status screen (hold OK).
+(Focus when gaming isn't needed: on the PS5/Xbox input the TV can't show the Fire Stick anyway.)
 
 Not wanted: sunrise/sunset, prayer times, days-until countdowns, sports scores. (The
 10-minute calendar countdown on the card IS wanted.) Reminders: later.
