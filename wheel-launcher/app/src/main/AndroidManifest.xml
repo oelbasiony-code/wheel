@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Lets Wheel see Home button presses in the system log. Granted by the setup script over ADB. -->
     <uses-permission android:name="android.permission.READ_LOGS" />
 

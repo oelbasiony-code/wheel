@@ -2,6 +2,7 @@ package com.omar.wheel;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.PowerManager;
 import android.util.Log;
 
 import java.util.concurrent.ExecutorService;
@@ -93,6 +94,7 @@ final class Commands {
     private static void toFireStick(Context c, int kind) throws InterruptedException {
         Startup.holdAutoBoot();   // the TV turning on shouldn't also play the normal boot
         RokuTv.wakeOnLan(c);      // a sleeping TV starts waking now, while we ask if it's on
+        wakeStick(c);             // with Fast TV start the stick sleeps when the TV turns off
         boolean wasOn = Boolean.TRUE.equals(RokuTv.screenOn(c));
         if (!wasOn) {
             RokuTv.powerOn(c);
@@ -107,6 +109,24 @@ final class Commands {
             Intent i = new Intent(c, MainActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             c.startActivity(i);
+        }
+    }
+
+    /**
+     * Wakes the Fire Stick itself if it's asleep. Once the TV has Fast TV start on, turning
+     * the TV off puts the stick to sleep too (HDMI-CEC), so the TV could switch to HDMI 4
+     * and find no picture. Waking also tells the TV "show me" over CEC.
+     */
+    @SuppressWarnings("deprecation")
+    private static void wakeStick(Context c) {
+        try {
+            PowerManager pm = (PowerManager) c.getSystemService(Context.POWER_SERVICE);
+            if (pm == null || pm.isInteractive()) return;
+            PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                    | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "wheel:wake");
+            wl.acquire(5000);
+        } catch (Exception e) {
+            Log.w(HomeWatcher.TAG, "wake stick: " + e);
         }
     }
 
