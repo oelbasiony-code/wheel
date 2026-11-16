@@ -595,7 +595,6 @@ final class AmbientView extends View {
 
         float clockW = DotFont.cols(time) * cp + cp * 1.5f + DotFont.cols(ap) * sp;
         float wxW = wx == null ? 0 : DotFont.cols(wx) * dp + dp * 3 + Doodles.ICON_COLS * iconP;
-        float blockW = Math.max(clockW, Math.max(DotFont.cols(date) * dp, wxW));
         java.util.List<WheelView.Tick> ticks = wheel.tickerItems(now);
         float calP = h / 170f;
         float calH = ticks.isEmpty() ? 0 : h * 0.045f + 7 * calP;
@@ -603,15 +602,17 @@ final class AmbientView extends View {
         float blockH = dinoH + h * 0.02f + 7 * cp + h * 0.04f + 7 * dp
                 + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP) + calH;
 
-        // Centered and still; nudged up when the news ticker (and maybe a train) runs below.
-        float x = (w - blockW) / 2f;
+        // Every line centered on the screen; the block nudged up when the news ticker
+        // (and maybe a train) runs below.
         float y = (h - blockH) / 2f;
         if (news != null && !news.isEmpty()) y -= h * 0.055f;
 
-        // Walk only above the clock digits (not past them over the AM/PM).
+        // The clock line (digits + AM/PM) centered; the dino walks above the digits only.
+        float x = (w - clockW) / 2f;
         float digitsW = DotFont.cols(time) * cp;
-        Doodles.drawDino(c, dot, x, x + Math.max(digitsW, Doodles.DINO_COLS * dinoP * 1.5f),
-                y + dinoH, dinoP, now, alpha, theme.wear);
+        float walk = Math.max(digitsW, Doodles.DINO_COLS * dinoP * 1.5f);
+        float walkX = x + (digitsW - walk) / 2f;
+        Doodles.drawDino(c, dot, walkX, walkX + walk, y + dinoH, dinoP, now, alpha, theme.wear);
         y += dinoH + h * 0.02f;
 
         float cx = x;
@@ -619,22 +620,26 @@ final class AmbientView extends View {
         DotFont.draw(c, ap, cx, y + 7 * cp - 7 * sp, sp, sp * 0.38f, dot, DIM, alpha);
         y += 7 * cp + h * 0.04f;
 
-        DotFont.draw(c, date, x, y, dp, dp * 0.36f, dot, CLOCK, alpha * 0.9f);
-        Season.drawIcon(c, dot, theme.icon, x + DotFont.cols(date) * dp + dp * 3, y + dp * 3.5f,
-                dp * 8f, now, alpha);
+        // Date centered (the month's icon hangs off its right end, not counted).
+        float dateW = DotFont.cols(date) * dp;
+        float dx = (w - dateW) / 2f;
+        DotFont.draw(c, date, dx, y, dp, dp * 0.36f, dot, CLOCK, alpha * 0.9f);
+        Season.drawIcon(c, dot, theme.icon, dx + dateW + dp * 3, y + dp * 3.5f, dp * 8f, now, alpha);
         y += 7 * dp + h * 0.035f;
 
         if (wx != null) {
-            // Weather text first, the animated icon to its right (same as the main screen).
+            // Weather text and its animated icon, centered together.
+            float wxX = (w - wxW) / 2f;
             float ty = y + (Doodles.ICON_ROWS * iconP - 7 * dp) / 2f;
-            DotFont.draw(c, wx, x, ty, dp, dp * 0.36f, dot, DIM, alpha);
-            Doodles.drawWeather(c, dot, x + DotFont.cols(wx) * dp + dp * 3, y, iconP,
+            DotFont.draw(c, wx, wxX, ty, dp, dp * 0.36f, dot, DIM, alpha);
+            Doodles.drawWeather(c, dot, wxX + DotFont.cols(wx) * dp + dp * 3, y, iconP,
                     wheel.weatherCode(), wheel.weatherDay(), now, alpha);
             y += Doodles.ICON_ROWS * iconP;
         }
         if (!ticks.isEmpty()) {
-            // The rotating line under the weather, in its card.
-            drawTicker(c, ticks, now, x, y + h * 0.045f, calP, Math.max(blockW, w * 0.4f), alpha);
+            // The rotating line under the weather, in its card, centered as wide as the clock.
+            float cardW = Math.max(clockW, w * 0.4f);
+            drawTicker(c, ticks, now, (w - cardW) / 2f, y + h * 0.045f, calP, cardW, alpha);
         }
     }
 }
