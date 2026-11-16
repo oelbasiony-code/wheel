@@ -45,7 +45,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   Google's script servers get "Address unavailable" from ntfy.sh.
 - `MessageOverlay.java`: the envelope icon (top-right, 10 s, dot teal = text, orange = mail),
   like a phone's notification icon. Over apps HomeWatcher shows it (icon only; ☰ can't be caught
-  there, so it stays unread). On Wheel, AmbientView draws it with a small ☰: ☰ opens it big in
+  there, so it stays unread). On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
   the middle; ☰, Back or any button closes. Play/Pause opens the newest any time. Texts stay on
   the card as MSG, emails as MAIL (separate, 2 hours each). An email = a body with line breaks.
   Do Not Disturb (tile in the all-apps list): no icon over shows; it shows when you're back on Wheel.

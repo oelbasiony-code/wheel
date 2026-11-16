@@ -193,7 +193,7 @@ final class AmbientView extends View {
             Messages.markRead(getContext());   // gone by itself; still on the card
             return;
         }
-        MessageOverlay.drawIcon(c, getWidth(), getHeight(), iconMail, true, iconSince, dot);
+        MessageOverlay.drawIcon(c, getWidth(), getHeight(), iconMail, false, iconSince, dot);
     }
 
     boolean messageShowing() {
