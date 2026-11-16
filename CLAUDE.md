@@ -72,7 +72,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   PS5 = InputHDMI1, Xbox = InputHDMI2. TV must have Control by mobile apps = Enabled.
   After a while off, the TV drops off Wi-Fi and ignores ECP; RokuTv.powerOn sends Wake-on-LAN
   (MACs learned from device-info, Config.ROKU_TV_MACS fallback) and retries PowerOn every second for ~40 s. From deep sleep the TV takes ~25 s to light up
-  (turning on Roku's Fast TV start would make it near-instant).
+  (Fast TV start is ON since Nov 16, so the TV should stay reachable and wake in seconds).
 - `HomeWatcher.java`: accessibility service + logcat watcher that sends the Home button to Wheel.
   Also knows when the TV turns on/off, for Govee and Startup: the stick does NOT sleep when the
   Roku TV turns off, so it polls the TV's power-mode over ECP every 2 s (RokuTv.screenOn).
