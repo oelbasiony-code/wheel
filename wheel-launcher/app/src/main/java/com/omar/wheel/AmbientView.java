@@ -118,6 +118,7 @@ final class AmbientView extends View {
     void setActive(boolean on) {
         active = on;
         removeCallbacks(frame);
+        removeCallbacks(everyOther);
         removeCallbacks(newsLoop);
         if (on) {
             lastInput = SystemClock.uptimeMillis();
