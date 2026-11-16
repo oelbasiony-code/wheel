@@ -36,6 +36,9 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   Anything posted to https://ntfy.sh/TOPIC shows up. It is NOT connected to iMessage, Gmail or
   iPhone notifications (Apple blocks reading notifications). Planned feeds into the topic:
   iPhone Shortcuts automations (Message / Email triggers) and maybe a Gmail Apps Script.
+- Email: BU Gmail forwards to ntfy's email address for the topic (ntfy-TOPIC@ntfy.sh, NOT in the
+  repo): subject = title, body = message. Messages.tidy() keeps the first lines and drops the
+  sign-off/signature. The iPhone Email trigger never fired, so email doesn't use the phone.
 - Feeding the topic is done on Omar's iPhone with Shortcuts automations (Message trigger for
   chosen people; Email trigger on his Gmail account, which he adds to Apple's Mail app; both
   POST sender + text/subject to the topic). A Google Apps Script route was tried and dropped:

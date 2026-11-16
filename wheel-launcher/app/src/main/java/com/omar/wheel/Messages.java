@@ -151,7 +151,7 @@ final class Messages {
             while (running && (line = in.readLine()) != null) {
                 JSONObject o = new JSONObject(line);
                 if (!"message".equals(o.optString("event"))) continue;
-                String text = o.optString("message", "").trim();
+                String text = tidy(o.optString("message", ""));
                 String title = o.optString("title", "").trim();
                 // ntfy fills in "triggered" when the phone sent an empty body.
                 if (text.equalsIgnoreCase("triggered")) text = "";
@@ -174,6 +174,37 @@ final class Messages {
             live = null;
             con.disconnect();
         }
+    }
+
+    private static final int MAX_CHARS = 120;
+    private static final java.util.regex.Pattern SIGN_OFF = java.util.regex.Pattern.compile(
+            "(?i)^(best|thanks|thank you|thx|regards|kind regards|best regards|warm regards|sincerely|"
+                    + "cheers|sent from|get outlook|--|__|on .+ wrote:|from:|-+ ?forwarded message).*");
+
+    /**
+     * Emails (sent to the topic's email address) arrive with line breaks, a sign-off and a
+     * signature. Keep the first lines, stop at the sign-off, and cut long ones short.
+     */
+    static String tidy(String raw) {
+        if (raw == null) return "";
+        String s = raw.replace("\r", "");
+        if (s.indexOf('\n') < 0) return s.trim();
+        StringBuilder b = new StringBuilder();
+        for (String line : s.split("\n")) {
+            line = line.trim();
+            if (line.isEmpty()) continue;
+            if (SIGN_OFF.matcher(line).matches()) break;
+            if (line.startsWith(">")) continue;   // quoted reply
+            if (b.length() > 0) b.append(' ');
+            b.append(line);
+            if (b.length() >= MAX_CHARS) break;
+        }
+        String out = b.toString().trim();
+        if (out.length() > MAX_CHARS) {
+            int cut = out.lastIndexOf(' ', MAX_CHARS);
+            out = out.substring(0, cut > 40 ? cut : MAX_CHARS) + "...";
+        }
+        return out;
     }
 
     private Messages() {}
