@@ -51,7 +51,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   the middle; ☰, Back or any button closes. Play/Pause opens the newest any time. Texts stay on
   the card as MSG, emails as MAIL (separate, 2 hours each). An email = a body with line breaks.
   Do Not Disturb (tile in the all-apps list): no icon over shows; it shows when you're back on Wheel.
-  An empty body arrives from ntfy as "triggered"; Wheel then shows just the title.
+  An empty body arrives from ntfy as "triggered"; Wheel then shows just the title. The same text twice within 30 s shows once (two phone automations: chosen senders + "contains a space").
   Don't rely on catching remote keys in HomeWatcher: on this stick key filtering didn't reach
   the service reliably, and Back always reaches the app anyway.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.

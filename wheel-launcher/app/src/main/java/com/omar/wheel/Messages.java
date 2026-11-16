@@ -185,6 +185,11 @@ final class Messages {
                 if (text.equalsIgnoreCase("triggered")) text = "";
                 if (!title.isEmpty()) text = text.isEmpty() ? title : title + ": " + text;
                 final String clean = DotFont.clean(text);
+                // Two phone automations can both catch one text: show it once.
+                long nowMs = System.currentTimeMillis();
+                if (!clean.isEmpty() && clean.equals(lastShown) && nowMs - lastShownAt < 30000L) continue;
+                lastShown = clean;
+                lastShownAt = nowMs;
                 p.edit().putString(K_LAST_ID, o.optString("id", since))
                         .putString(mail ? K_MAIL_TEXT : K_TEXT, clean)
                         .putLong(mail ? K_MAIL_TIME : K_TIME, System.currentTimeMillis())
@@ -221,6 +226,9 @@ final class Messages {
         String who = name.isEmpty() ? number : name;
         return text.isEmpty() ? who : who + ": " + text;
     }
+
+    private static String lastShown;
+    private static long lastShownAt;
 
     private static final int MAX_CHARS = 120;
     private static final java.util.regex.Pattern SIGN_OFF = java.util.regex.Pattern.compile(
