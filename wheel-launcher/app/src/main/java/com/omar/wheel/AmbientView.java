@@ -177,6 +177,7 @@ final class AmbientView extends View {
         iconText = null;
         message = text;
         messageMail = mail;
+        Messages.markItemRead(getContext(), text);
         messageSince = System.currentTimeMillis();
         Messages.markRead(getContext());
         poke();
@@ -286,6 +287,11 @@ final class AmbientView extends View {
                 c.drawCircle(left - p * 2, y + 3.5f * p, p * 0.6f, dot);
             }
             float ly = y + (7 * p - 7 * lp) / 2f;
+            if (!it.read && !sel) {
+                // Not seen yet: a small dot in its color.
+                dot.setColor(Doodles.withAlpha(it.mail ? WheelView.TICK_MAIL : WheelView.TICK_MSG, e));
+                c.drawCircle(left - p * 2, y + 3.5f * p, p * 0.6f, dot);
+            }
             DotFont.draw(c, it.mail ? "MAIL" : "MSG", left, ly, lp, lp * 0.36f, dot,
                     new int[]{it.mail ? WheelView.TICK_MAIL : WheelView.TICK_MSG}, a);
             DotFont.draw(c, WheelView.fit(it.text, maxCols), left + labelW, y, p, p * 0.36f, dot, CLOCK, a);

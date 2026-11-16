@@ -259,18 +259,18 @@ final class Startup {
         int[] m = Messages.missed(wheel.getContext(), now);
         String mLine;
         if (m[0] == 0 && m[1] == 0) {
-            mLine = "NO NEW MESSAGES OR MAIL";
+            mLine = "NO NEW MESSAGES";
         } else {
             mLine = "";
             if (m[0] > 0) mLine = m[0] + (m[0] == 1 ? " MESSAGE" : " MESSAGES");
             if (m[1] > 0) mLine += (mLine.isEmpty() ? "" : ", ") + m[1] + " EMAIL" + (m[1] == 1 ? "" : "S");
         }
-        String[] labels = {"WEATHER", "FIRST UP", "MISSED"};
+        String[] labels = {"WEATHER", "CAL", "MSG"};   // the card's labels and colors
         String[] vals = {DotFont.clean(wLine), DotFont.clean(eLine), DotFont.clean(mLine)};
-        int[] labelColors = {BLUE, CREAM, WheelView.TICK_MAIL};
+        int[] labelColors = {BLUE, WheelView.TICK_CAL, WheelView.TICK_MSG};
 
         // Lay the whole thing out as one block, centered on screen.
-        float labelW = DotFont.cols("FIRST UP") * lp + p * 6;
+        float labelW = DotFont.cols("WEATHER") * lp + p * 6;
         float rowsW = 0;
         for (String v : vals) rowsW = Math.max(rowsW, labelW + DotFont.cols(v) * p);
         float helloW = DotFont.cols(hello) * big, dateW = DotFont.cols(date) * p;

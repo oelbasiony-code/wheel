@@ -102,6 +102,8 @@ public final class HomeWatcher extends AccessibilityService {
     private volatile boolean tvWatching;
     private Thread tvThread;
     private Boolean tvWasOn;
+    /** Is the TV on right now (null = don't know yet)? A message that arrives while it's on is seen. */
+    static volatile Boolean tvIsOn;
 
     private void startTvWatch() {
         if (tvWatching) return;
@@ -120,11 +122,11 @@ public final class HomeWatcher extends AccessibilityService {
                                 tvOnAt = System.currentTimeMillis();   // startup waits for the picture
                             } else {
                                 Govee.tvOff(c);
-                                Messages.markTvOff(c);
                                 tvOnAt = 0;
                             }
                         }
                         tvWasOn = on;
+                        tvIsOn = on;
                         // Sitting on Wheel at 9 pm: the home light turns to candlelight.
                         if (on && MainActivity.onScreen) Govee.homeTick(c);
                     }

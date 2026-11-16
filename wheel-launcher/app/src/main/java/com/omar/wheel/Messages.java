@@ -258,11 +258,13 @@ final class Messages {
         final String text;
         final boolean mail;
         final long time;
+        boolean read;   // popped up while the TV was on, or opened
 
-        Item(String text, boolean mail, long time) {
+        Item(String text, boolean mail, long time, boolean read) {
             this.text = text;
             this.mail = mail;
             this.time = time;
+            this.read = read;
         }
     }
 
@@ -270,9 +272,25 @@ final class Messages {
         try {
             org.json.JSONArray old = new org.json.JSONArray(p.getString(K_HISTORY, "[]"));
             org.json.JSONArray out = new org.json.JSONArray();
-            out.put(new JSONObject().put("x", text).put("m", mail).put("t", time));
+            // Seen if it came in while the TV was on (it popped up); missed if the TV was off.
+            boolean seen = Boolean.TRUE.equals(HomeWatcher.tvIsOn);
+            out.put(new JSONObject().put("x", text).put("m", mail).put("t", time).put("r", seen));
             for (int i = 0; i < old.length() && out.length() < HISTORY_MAX; i++) out.put(old.get(i));
             p.edit().putString(K_HISTORY, out.toString()).apply();
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Opened it: no longer missed. */
+    static void markItemRead(Context c, String text) {
+        SharedPreferences p = sp(c);
+        try {
+            org.json.JSONArray a = new org.json.JSONArray(p.getString(K_HISTORY, "[]"));
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.getJSONObject(i);
+                if (o.optString("x").equals(text)) o.put("r", true);
+            }
+            p.edit().putString(K_HISTORY, a.toString()).apply();
         } catch (Exception ignored) {
         }
     }
@@ -298,20 +316,15 @@ final class Messages {
         }
     }
 
-    /** The TV went off (HomeWatcher): what comes in after this is "missed". */
-    static void markTvOff(Context c) {
-        sp(c).edit().putLong("tv_off_at", System.currentTimeMillis()).apply();
-    }
-
     /**
-     * For the briefing: {texts, emails} that came in since the TV last went off (or in the
-     * last 12 hours if that's longer ago).
+     * For the briefing: {texts, emails} you haven't seen yet (came in while the TV was off, not
+     * opened since), from the last 12 hours.
      */
     static int[] missed(Context c, long now) {
-        long since = Math.max(sp(c).getLong("tv_off_at", 0), now - 12 * 3600000L);
+        long since = now - 12 * 3600000L;
         int texts = 0, mails = 0;
         for (Item it : history(c)) {
-            if (it.time < since) continue;
+            if (it.time < since || it.read) continue;
             if (it.mail) mails++;
             else texts++;
         }
@@ -327,7 +340,7 @@ final class Messages {
             for (int i = 0; i < a.length(); i++) {
                 JSONObject o = a.getJSONObject(i);
                 if (o.optLong("t") < old) continue;
-                out.add(new Item(o.optString("x"), o.optBoolean("m"), o.optLong("t")));
+                out.add(new Item(o.optString("x"), o.optBoolean("m"), o.optLong("t"), o.optBoolean("r", true)));
             }
         } catch (Exception ignored) {
         }
@@ -336,8 +349,8 @@ final class Messages {
             SharedPreferences p = sp(c);
             String m = p.getString(K_TEXT, null), e = p.getString(K_MAIL_TEXT, null);
             long mt = p.getLong(K_TIME, 0), et = p.getLong(K_MAIL_TIME, 0);
-            if (m != null && !m.isEmpty()) out.add(new Item(m, false, mt));
-            if (e != null && !e.isEmpty()) out.add(et > mt ? 0 : out.size(), new Item(e, true, et));
+            if (m != null && !m.isEmpty()) out.add(new Item(m, false, mt, true));
+            if (e != null && !e.isEmpty()) out.add(et > mt ? 0 : out.size(), new Item(e, true, et, true));
         }
         return out;
     }

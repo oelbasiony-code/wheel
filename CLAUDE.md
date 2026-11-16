@@ -61,7 +61,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   briefing even if already shown), !ps5 / !xbox (TV on, input, strip color). Try one:
   `--es command home`. Each is a one-action iPhone Shortcut/automation (Get Contents of URL, POST,
   body = the command).
-- Inbox: hold ☰ on Wheel: last 10 texts/emails from the past 7 days (Messages.history), up/down, OK opens, hold OK deletes, Back closes. No on-screen hints (Omar's call).
+- Inbox: hold ☰ on Wheel: last 10 texts/emails from the past 7 days (Messages.history), up/down, OK opens, hold OK deletes, Back closes; unread items have a colored dot. No on-screen hints (Omar's call).
   Try it: `--ez inbox_demo true`.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
 - `Weather.java`: Open-Meteo (no key); MET Norway backup when it doesn't answer; last good reading saved and shown at start.
@@ -80,7 +80,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   HBO violet, Apple TV cool white). The strip runs green-heavy: yellow = FF9A00, orange = FF3C00. Cloud allows ~10 commands/min: only changes are sent, stale requests dropped, back on Wheel it goes to the home light: candlelight 2200K at 60%, candlelight 2000K at 35% from 9 pm to 5 am (Config.HOME_LIGHT_*, NIGHT_*); it shifts by itself at 9 pm while you sit on Wheel.
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
 - `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, hold,
-  fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first event, MISSED texts/emails since the TV went off (no train); was: weather, first
+  fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first event, MSG = unread texts/emails from the last 12 h (read = popped up while the TV was on, or opened), labels WEATHER / CAL / MSG in the card's colors (no train); was: weather, first
   event, next train, typed out). Any button skips. Try it: `--ez boot_demo true` (add
   `--ez briefing true`), or `--ez briefing_demo true`.
 
