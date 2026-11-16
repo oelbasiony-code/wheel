@@ -148,7 +148,39 @@ final class Agenda {
             if (out.size() >= max) break;
             out.add(new String[]{"TODAY", e.title});
         }
+        if (out.isEmpty()) {
+            // Nothing left today: the next thing coming up, so the card isn't blank at night.
+            for (Event e : events) {
+                if (e.start < tomorrow) continue;
+                boolean isTomorrow = e.start < tomorrow + 24 * 3600000L;
+                Calendar d = Calendar.getInstance(tz);
+                d.setTimeInMillis(e.start);
+                String day = isTomorrow ? "TOMORROW"
+                        : new String[]{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"}[d.get(Calendar.DAY_OF_WEEK) - 1];
+                out.add(new String[]{e.allDay ? day : day + " " + clock(e.start, tz), e.title});
+                break;
+            }
+        }
         return out;
+    }
+
+    /** Saves the private calendar link(s) on the stick (sent with adb, never in the repo). */
+    static boolean saveLinks(Context ctx, String links) {
+        File f = linkFile(ctx.getApplicationContext());
+        if (f == null || links == null) return false;
+        try {
+            java.io.FileOutputStream o = new java.io.FileOutputStream(f);
+            o.write(links.trim().replaceAll("[\\s,]+", "\n").concat("\n").getBytes("UTF-8"));
+            o.close();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** True if a calendar link has been set up on this stick. */
+    static boolean hasLink(Context ctx) {
+        return !readLinks(linkFile(ctx.getApplicationContext())).isEmpty();
     }
 
     /** 9A, 9:30A, 12P. */

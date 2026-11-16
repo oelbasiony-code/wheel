@@ -100,7 +100,27 @@ final class Train {
             if (e.getValue() > now - 60000L) out.add(e.getValue());
         }
         Collections.sort(out);
+
+        // Last train of the night is gone: tomorrow's first trains, so there's always a time.
+        if (out.isEmpty() || out.get(out.size() - 1) < now) {
+            Calendar t = Calendar.getInstance(TimeZone.getTimeZone("America/New_York"));
+            if (t.get(Calendar.HOUR_OF_DAY) >= 3) t.add(Calendar.DAY_OF_MONTH, 1);
+            String date = t.get(Calendar.YEAR) + "-" + two(t.get(Calendar.MONTH) + 1) + "-"
+                    + two(t.get(Calendar.DAY_OF_MONTH));
+            JSONArray next = get(API + "/schedules?" + filter + "&filter%5Bdate%5D=" + date
+                    + "&sort=departure_time&page%5Blimit%5D=3");
+            for (int i = 0; i < next.length(); i++) {
+                long d = parse(next.getJSONObject(i).getJSONObject("attributes")
+                        .optString("departure_time", null));
+                if (d > now) out.add(d);
+            }
+            Collections.sort(out);
+        }
         return out;
+    }
+
+    private static String two(int n) {
+        return (n < 10 ? "0" : "") + n;
     }
 
     private static String tripOf(JSONObject o) {

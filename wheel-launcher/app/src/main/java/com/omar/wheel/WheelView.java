@@ -554,6 +554,7 @@ final class WheelView extends View {
         java.util.ArrayList<Tick> out = new java.util.ArrayList<>();
         TimeZone tz = TimeZone.getDefault();
         for (String[] l : Agenda.lines(agenda, now, tz, 3)) out.add(new Tick(l[0], l[1], TICK_CAL));
+        if (noCalendarLink) out.add(new Tick("CAL", "NO CALENDAR LINK YET", TICK_CAL));
 
         if (trains != null) {
             StringBuilder b = new StringBuilder();
@@ -568,6 +569,14 @@ final class WheelView extends View {
                 b.append(n == 0 ? "" : "   ").append(when);
                 n++;
             }
+            if (n == 0) {
+                // Nothing in the next 3 hours (late at night): just the next one.
+                long t = nextTrain(now);
+                if (t > 0) {
+                    b.append("NEXT ").append(Agenda.clock(t, tz));
+                    n = 1;
+                }
+            }
             if (n > 0) out.add(new Tick("TRAIN", b.toString(), TICK_TRAIN));
         }
 
@@ -579,6 +588,13 @@ final class WheelView extends View {
             }
         }
         return out;
+    }
+
+    private boolean noCalendarLink;
+
+    /** No calendar.txt on the stick: the card says so instead of staying blank. */
+    void setNoCalendarLink(boolean none) {
+        noCalendarLink = none;
     }
 
     void setAgenda(List<Agenda.Event> a) {

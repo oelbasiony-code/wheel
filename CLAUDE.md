@@ -22,7 +22,11 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 - `DotFont.java` (5x7 font), `Doodles.java` (dino, weather icons), `Season.java` (holidays).
 - `Agenda.java`: Google Calendar via the private iCal link. The link is NOT in the repo (the
   repo is public); it is read from `/sdcard/Android/data/com.omar.wheel/files/calendar.txt`
-  on the stick (one link per line).
+  on the stick (one link per line). Fire OS 8 blocks adb from that folder, so send it through
+  the app instead: `./adb shell "am start -n com.omar.wheel/.MainActivity --es calendar_link 'LINK'"`
+  (several links: separate with spaces). Without a link the card says NO CALENDAR LINK YET.
+- `TrainDoodle.java`: the dot-matrix commuter rail train along the bottom.
+- `News.java`: NYT headlines from the public RSS feed (no key) for idle mode's ticker.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
 - `Weather.java`: Open-Meteo (no key).
 - `RokuTv.java`: PLAYSTATION / XBOX tiles switch the TV input over Roku ECP (port 8060).
@@ -46,6 +50,11 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 4. `./adb connect 192.168.86.52 && ./adb install -r wheel.apk`
 5. Reopen Wheel: `./adb shell am start -n com.omar.wheel/.MainActivity`
 
+Try-it-now hooks (for screenshots): add `--ez train_demo true` (a train pass) or
+`--ez idle_demo true` (idle mode) to the `am start` line in step 5.
+
+GitHub: `gh` is at `/opt/homebrew/bin/gh` and signed in (it also handles `git push`).
+
 `install -r` keeps the Home takeover and permissions; the setup script never needs re-running
 for an update. Take a screenshot to check work: `./adb exec-out screencap -p > screen.png`.
 
@@ -63,15 +72,21 @@ Wheel + pinned apps (YouTube TV, Apple TV, Disney+, Netflix, Hulu, Prime Video, 
 HBO Max, PlayStation, Xbox), Home button takeover, weather with animated icons and real moon
 phase, idle mode, holidays (Halloween, Thanksgiving, Christmas, Ramadan, Eid, birthday Apr 30),
 PS5/Xbox input switching, Google Calendar, MBTA trains, and a rotating info line above the
-greeting (calendar, train, rain warning; left/right on the remote flips it).
+greeting (calendar, train, rain warning; left/right on the remote flips it), now in a
+Smart Stack card (faint dotted rounded box, messages slide up, position dots on the right).
+When today is empty it shows tomorrow's first event and the next train.
+Commuter rail train: rolls along the bottom with its departure time above it, every 5 minutes
+in the 30 minutes before the next train.
 
 ## Next up (Omar's picks, in order)
 
-1. **iPhone Smart Stack look for the rotating line**: a faint dotted rounded card around it,
-   and messages slide up into place (not fade). Position dots on the right.
-2. **Train animation**: a dot-matrix commuter rail train (MBTA purple) rolls across the bottom
-   of the screen with the departure time riding above it, with a smoke puff. Only in the
-   ~30 minutes before a train leaves, every few minutes, so it stays special.
+1. **NYT headlines ticker** (in progress): public RSS feed
+   (https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml, no key), a smooth scrolling
+   dot-matrix ticker along the bottom of **idle mode only**, "NYT" as the label, a dot between
+   headlines, refreshed every 15 minutes. Lives in `AmbientView` so it stays fast.
+2. **The bottom of the screen is shared**: in normal mode it's the train's track; in idle mode
+   the NYT ticker runs there, and if a train is due during idle it rides on top of the ticker
+   line like rails. Never put the train at the top.
 3. **Startup sequence**: when Wheel first appears after the TV turns on, a ~2 s dot-matrix
    boot (dots fly in, "WELCOME BACK, OMAR", wheel builds itself). JARVIS feel.
 4. **Morning briefing**: first time on before 11 am, a full-screen moment with weather, first

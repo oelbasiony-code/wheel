@@ -61,6 +61,12 @@ final class DotFont {
         g(',', "..", "..", "..", "..", "..", ".#", "#.");
         g('\'', "#", "#", ".", ".", ".", ".", ".");
         g('!', "#", "#", "#", "#", "#", ".", "#");
+        g('"', "#.#", "#.#", "...", "...", "...", "...", "...");
+        g(';', "..", ".#", ".#", "..", ".#", ".#", "#.");
+        g('(', ".#", "#.", "#.", "#.", "#.", "#.", ".#");
+        g(')', "#.", ".#", ".#", ".#", ".#", ".#", "#.");
+        g('$', "..#..", ".####", "#.#..", ".###.", "..#.#", "####.", "..#..");
+        g('%', "##...", "##..#", "...#.", "..#..", ".#...", "#..##", "...##");
         g(' ', "...", "...", "...", "...", "...", "...", "...");
         g(DEG, "###", "#.#", "###", "...", "...", "...", "...");
         g(UP, "..#..", ".###.", "#.#.#", "..#..", "..#..", "..#..", "..#..");
@@ -124,6 +130,12 @@ final class DotFont {
      */
     static float draw(Canvas cv, String s, float x, float top, float pitch, float r,
                       Paint p, int[] colors, float alpha) {
+        return draw(cv, s, x, top, pitch, r, p, colors, alpha, -Float.MAX_VALUE, Float.MAX_VALUE);
+    }
+
+    /** Same, but skips letters entirely outside minX..maxX (for long scrolling text). */
+    static float draw(Canvas cv, String s, float x, float top, float pitch, float r,
+                      Paint p, int[] colors, float alpha, float minX, float maxX) {
         int a = Math.max(0, Math.min(255, Math.round(alpha * 255f)));
         if (a == 0) return cols(s) * pitch;
         float cx = x;
@@ -141,6 +153,10 @@ final class DotFont {
             int ca = Math.round(((col >>> 24) & 0xFF) * (a / 255f));
             p.setColor((col & 0x00FFFFFF) | (ca << 24));
             int w = d[0];
+            if (cx + w * pitch < minX || cx > maxX) {
+                cx += w * pitch;
+                continue;
+            }
             for (int row = 0; row < 7; row++) {
                 int bits = d[row + 1];
                 if (bits == 0) continue;

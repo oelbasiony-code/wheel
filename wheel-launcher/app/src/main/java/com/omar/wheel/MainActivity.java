@@ -52,6 +52,7 @@ public final class MainActivity extends Activity implements WheelView.Host {
                     @Override
                     public void onAgenda(java.util.List<Agenda.Event> events) {
                         fetchingAgenda = false;
+                        wheel.setNoCalendarLink(!Agenda.hasLink(MainActivity.this));
                         if (events != null) {
                             lastAgenda = System.currentTimeMillis();
                             wheel.setAgenda(events);
@@ -132,11 +133,28 @@ public final class MainActivity extends Activity implements WheelView.Host {
         checkDemo(i);
     }
 
-    /** `am start ... --ez train_demo true` sends a train across right away, to try it out. */
+    /**
+     * `am start ... --ez train_demo true` sends a train across right away, to try it out.
+     * `am start ... --es calendar_link URL` saves the private calendar link on the stick
+     * (newer Fire OS won't let adb write into the app's folder directly).
+     */
     private void checkDemo(android.content.Intent i) {
-        if (i != null && i.getBooleanExtra("train_demo", false)) {
+        if (i == null) return;
+        if (i.getBooleanExtra("train_demo", false)) {
             i.removeExtra("train_demo");
             ambient.demoTrain();
+        }
+        if (i.getBooleanExtra("idle_demo", false)) {
+            i.removeExtra("idle_demo");
+            ambient.demoIdle();
+        }
+        String link = i.getStringExtra("calendar_link");
+        if (link != null) {
+            i.removeExtra("calendar_link");
+            toast(Agenda.saveLinks(this, link) ? "Calendar link saved" : "Couldn't save the calendar link");
+            lastAgenda = 0;
+            h.removeCallbacks(agendaLoop);
+            h.post(agendaLoop);
         }
     }
 

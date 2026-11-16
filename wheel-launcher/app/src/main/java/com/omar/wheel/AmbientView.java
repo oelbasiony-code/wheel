@@ -52,6 +52,39 @@ final class AmbientView extends View {
     // A train pass started by hand (for trying it out), 0 if none.
     private long demoTrain;
 
+    // NYT headlines for idle mode's ticker, refreshed every 15 minutes while Wheel is up.
+    private static final long NEWS_EVERY_MS = 15 * 60 * 1000L;
+    private static final float NEWS_DOTS_PER_SEC = 14f;
+    private static final int[] NYT_LABEL = {0xFFEDE6DA};
+    private java.util.List<String> news;
+    private long lastNews;
+    private boolean fetchingNews;
+    private final android.os.Handler ui = new android.os.Handler();
+
+    private final Runnable newsLoop = new Runnable() {
+        @Override
+        public void run() {
+            if (!active) return;
+            if (!fetchingNews && System.currentTimeMillis() - lastNews > NEWS_EVERY_MS) {
+                fetchingNews = true;
+                News.fetch(ui, new News.Callback() {
+                    @Override
+                    public void onNews(java.util.List<String> headlines) {
+                        fetchingNews = false;
+                        if (headlines != null) {
+                            news = headlines;
+                            lastNews = System.currentTimeMillis();
+                        } else {
+                            // Try again in a couple of minutes.
+                            lastNews = System.currentTimeMillis() - NEWS_EVERY_MS + 2 * 60 * 1000L;
+                        }
+                    }
+                });
+            }
+            postDelayed(this, 60 * 1000L);
+        }
+    };
+
     private final Runnable frame = new Runnable() {
         @Override
         public void run() {
@@ -73,10 +106,12 @@ final class AmbientView extends View {
     void setActive(boolean on) {
         active = on;
         removeCallbacks(frame);
+        removeCallbacks(newsLoop);
         if (on) {
             lastInput = SystemClock.uptimeMillis();
             lastFrame = 0;
             post(frame);
+            post(newsLoop);
         } else {
             idle = 0;
             wheel.setCovered(false);
@@ -93,6 +128,13 @@ final class AmbientView extends View {
         slideDir = dir;
         invalidate();
     }
+
+    /** Go into idle mode right now (for trying it out); any remote press wakes it. */
+    void demoIdle() {
+        forceIdle = true;   // applied on the next frame (Wheel resumes after the intent)
+    }
+
+    private boolean forceIdle;
 
     /** Send one train across the screen right now, whatever the timetable says. */
     void demoTrain() {
@@ -217,6 +259,11 @@ final class AmbientView extends View {
         long now = System.currentTimeMillis();
         long dt = lastFrame == 0 ? 0 : Math.min(200, up - lastFrame);
         lastFrame = up;
+        if (forceIdle) {
+            forceIdle = false;
+            lastInput = up - IDLE_AFTER_MS - 1;
+            waking = false;
+        }
 
         boolean wantIdle = Config.IDLE_MINUTES > 0 && up - lastInput > IDLE_AFTER_MS;
         if (waking || !wantIdle) {
@@ -247,11 +294,64 @@ final class AmbientView extends View {
             Season.drawEffect(c, dot, theme.fx, getWidth(), h, now, idle * IDLE_BRIGHTNESS);
             drawIdle(c, now, idle * IDLE_BRIGHTNESS, theme);
         }
-        drawTrain(c, now, normal + idle * IDLE_BRIGHTNESS);
+
+        // The bottom of the screen is shared. Normal mode: it's the train's track.
+        // Idle mode: the news ticker runs there, and a train rides on top of it like rails.
+        float trackY = h * 0.96f;
+        boolean ticker = idle > 0.01f && news != null && !news.isEmpty();
+        if (ticker) {
+            float np = h / 170f;
+            float newsTop = h * 0.955f - 7 * np;
+            drawNews(c, up, newsTop, np, idle * IDLE_BRIGHTNESS);
+            float rails = newsTop - np * 1.6f;
+            trackY = trackY + (rails - trackY) * idle;
+        }
+        drawTrain(c, now, trackY, normal + idle * IDLE_BRIGHTNESS);
+    }
+
+    /** NYT headlines scrolling right to left, "NYT" fixed on the left, a dot between headlines. */
+    private void drawNews(Canvas c, long up, float top, float p, float alpha) {
+        java.util.List<String> items = news;
+        float w = getWidth();
+        float left = w * 0.04f, right = w * 0.96f;
+        float lw = DotFont.draw(c, "NYT", left, top, p, p * 0.36f, dot, NYT_LABEL, alpha);
+        // A short faint bar between the label and the moving text.
+        dot.setColor(Doodles.withAlpha(CARD, alpha));
+        for (int i = 0; i < 7; i++) c.drawCircle(left + lw + p * 2.5f, top + i * p + p / 2f, p * 0.3f, dot);
+        float x0 = left + lw + p * 5f;
+
+        // One loop = every headline plus a separator after each.
+        float sep = p * 8f;
+        float total = 0;
+        for (String s : items) total += DotFont.cols(s) * p + sep;
+        if (total <= 0) return;
+        float offset = (up * NEWS_DOTS_PER_SEC * p / 1000f) % total;
+
+        c.save();
+        c.clipRect(x0, top - p, right, top + 8 * p);
+        float x = x0 - offset;
+        // Draw the loop twice back to back so it never runs out mid-screen.
+        for (int pass = 0; pass < 2 && x < right; pass++) {
+            for (String s : items) {
+                float sw = DotFont.cols(s) * p;
+                if (x + sw >= x0 && x <= right) {
+                    DotFont.draw(c, s, x, top, p, p * 0.36f, dot, DIM, alpha, x0, right);
+                }
+                x += sw;
+                float dx = x + sep / 2f;
+                if (dx >= x0 && dx <= right) {
+                    dot.setColor(Doodles.withAlpha(0xFFC583BC, alpha));
+                    c.drawCircle(dx, top + 3.5f * p, p * 0.55f, dot);
+                }
+                x += sep;
+                if (x > right) break;
+            }
+        }
+        c.restore();
     }
 
     /** The commuter rail train along the bottom, in the half hour before it leaves. */
-    private void drawTrain(Canvas c, long now, float alpha) {
+    private void drawTrain(Canvas c, long now, float bottom, float alpha) {
         if (!Config.TRAIN) return;
         long dep = wheel.nextTrain(now);
         float t;
@@ -267,11 +367,14 @@ final class AmbientView extends View {
         if (t < 0) return;
         String label = "TO " + Config.TRAIN_TO;
         if (dep > 0) {
-            hm.setTimeZone(TimeZone.getDefault());
-            label = hm.format(new Date(dep)) + " " + label;
+            TimeZone tz = TimeZone.getDefault();
+            hm.setTimeZone(tz);
+            ampm.setTimeZone(tz);
+            Date d = new Date(dep);
+            label = hm.format(d) + " " + ampm.format(d).toUpperCase(Locale.US) + " " + label;
         }
         float h = getHeight();
-        TrainDoodle.draw(c, dot, getWidth(), h * 0.96f, h / 190f, t, label, alpha);
+        TrainDoodle.draw(c, dot, getWidth(), bottom, h / 190f, t, label, alpha);
     }
 
     /** A big clock centered on the screen, with the dino walking on top. */
