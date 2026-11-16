@@ -25,8 +25,11 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   on the stick (one link per line). Fire OS 8 blocks adb from that folder, so send it through
   the app instead: `./adb shell "am start -n com.omar.wheel/.MainActivity --es calendar_link 'LINK'"`
   (several links: separate with spaces). Without a link the card says CAL NO LINK YET.
+  The link is secret (anyone with it can read the calendar): Omar runs that command himself;
+  never ask him to paste it in chat.
 - `TrainDoodle.java`: the dot-matrix commuter rail train along the bottom.
-- `News.java`: NYT headlines from the public RSS feed (no key) for idle mode's ticker.
+- `News.java`: NYT headlines from the public RSS feed (no key) for the bottom ticker.
+- `Facts.java`: built-in fun fact of the day (one per day, cycles the list).
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
 - `Weather.java`: Open-Meteo (no key).
 - `RokuTv.java`: PLAYSTATION / XBOX tiles switch the TV input over Roku ECP (port 8060).
@@ -72,32 +75,34 @@ Wheel + pinned apps (YouTube TV, Apple TV, Disney+, Netflix, Hulu, Prime Video, 
 HBO Max, PlayStation, Xbox), Home button takeover, weather with animated icons and real moon
 phase, idle mode, holidays (Halloween, Thanksgiving, Christmas, Ramadan, Eid, birthday Apr 30),
 PS5/Xbox input switching, Google Calendar, MBTA trains, and a rotating info line above the
-greeting (calendar, train, rain warning; left/right on the remote flips it), now in a
-Smart Stack card (faint dotted rounded box, messages slide up, position dots on the right).
-When today is empty it shows tomorrow's first event and the next train.
-Commuter rail train: rolls along the bottom with its departure time above it, every 5 minutes
-in the 30 minutes before the next train.
+greeting, now a Smart Stack card (faint dotted rounded box, messages slide up, position dots
+on the right, long text scrolls sideways). It rotates Calendar (tomorrow's first event when
+today is empty) and a fun fact of the day, with a rain warning when relevant. No train on the
+card (Omar's call: the train animation covers it).
+Commuter rail train: rolls along the bottom with "NEXT TRAIN TO BOSTON 4:58 AM" (small,
+centered over it), every 5 minutes in the 30 minutes before the next train.
+NYT headlines ticker: always running along the very bottom (dimmer on the main screen, full in
+idle), "NYT" label, a dot between headlines, refreshed every 15 minutes, all in `AmbientView`.
+The bottom is shared: the train rides on top of the ticker like rails. Never put the train at
+the top.
 
 ## Next up (Omar's picks, in order)
 
-1. **NYT headlines ticker** (in progress): public RSS feed
-   (https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml, no key), a smooth scrolling
-   dot-matrix ticker along the bottom of **idle mode only**, "NYT" as the label, a dot between
-   headlines, refreshed every 15 minutes. Lives in `AmbientView` so it stays fast.
-2. **The bottom of the screen is shared**: in normal mode it's the train's track; in idle mode
-   the NYT ticker runs there, and if a train is due during idle it rides on top of the ticker
-   line like rails. Never put the train at the top.
-Items 3-6 are queued: don't start them until Omar says so.
+1. **Messages to the TV** (next): a phone Shortcut sends text that pops up in dots (free push
+   service such as ntfy.sh, topic name kept off the public repo like the calendar link).
+2. **Govee lights** (model H615C LED strip): (a) lights on when the TV turns on, off when it
+   turns off, with a hidden toggle so Omar can switch this on/off; (b) when a streaming app
+   opens, fade the lights to that app's brand color (Netflix red, Disney+ blue...), back to
+   normal on Home. Screen-content color matching isn't possible on the stick (DRM blocks capture).
+   Prefer Govee's LAN API (UDP multicast scan 239.255.255.250:4001, replies on 4002, commands
+   to the light's IP on 4003; needs "LAN Control" on in the Govee Home app). On Nov 16 a scan
+   from the Mac got no reply, so LAN Control was probably off. Fall back to the cloud API key.
+
+Queued, don't start until Omar says so:
 
 3. **Startup sequence**: when Wheel first appears after the TV turns on, a ~2 s dot-matrix
    boot (dots fly in, "WELCOME BACK, OMAR", wheel builds itself). JARVIS feel.
 4. **Morning briefing**: first time on before 11 am, a full-screen moment with weather, first
    calendar event, next train; then settles into the wheel.
-5. **Messages to the TV**: a phone Shortcut sends text that pops up in dots (free push service
-   such as ntfy.sh, topic name kept off the public repo like the calendar link).
-6. **Govee lights turn on with the TV**: Omar has Govee lights. When the TV turns on (Wheel
-   comes up after the stick wakes), switch the Govee lights on too. No dimming for movies.
-   Prefer Govee's LAN API (UDP, port 4003, needs "LAN Control" switched on per device in the
-   Govee Home app); fall back to the cloud API key.
 
 Not wanted: sunrise/sunset, prayer times, countdowns, sports scores. Reminders: later.
