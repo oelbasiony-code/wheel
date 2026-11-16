@@ -193,7 +193,7 @@ final class Weather {
         return Math.round(c * 9 / 5 + 32);
     }
 
-    private static String symbol(JSONObject data) {
+    private static String symbol(JSONObject data) throws Exception {
         JSONObject n = data.optJSONObject("next_1_hours");
         if (n == null) n = data.optJSONObject("next_6_hours");
         return n == null ? "cloudy" : n.getJSONObject("summary").optString("symbol_code", "cloudy");
