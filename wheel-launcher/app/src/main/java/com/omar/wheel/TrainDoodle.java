@@ -88,10 +88,10 @@ final class TrainDoodle {
 
         if (label != null) {
             // The time rides along above the coaches.
-            float lp = pitch * 0.9f;
+            float lp = pitch * 0.8f;
             float lw = DotFont.cols(label) * lp;
             float lx = x + (COACHES * (COACH[0].length() + GAP) * pitch - lw) / 2f;
-            DotFont.draw(c, label, lx, top - lp * 10f, lp, lp * 0.36f, p, new int[]{STRIPE}, alpha);
+            DotFont.draw(c, label, lx, top - lp * 9f, lp, lp * 0.36f, p, new int[]{STRIPE}, alpha);
         }
     }
 

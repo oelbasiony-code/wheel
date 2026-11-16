@@ -554,7 +554,7 @@ final class WheelView extends View {
         java.util.ArrayList<Tick> out = new java.util.ArrayList<>();
         TimeZone tz = TimeZone.getDefault();
         for (String[] l : Agenda.lines(agenda, now, tz, 3)) out.add(new Tick(l[0], l[1], TICK_CAL));
-        if (noCalendarLink) out.add(new Tick("CAL", "NO CALENDAR LINK YET", TICK_CAL));
+        if (noCalendarLink) out.add(new Tick("CAL", "NO LINK YET", TICK_CAL));
 
         if (trains != null) {
             StringBuilder b = new StringBuilder();

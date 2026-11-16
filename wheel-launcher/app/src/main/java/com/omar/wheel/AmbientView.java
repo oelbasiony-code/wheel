@@ -238,9 +238,9 @@ final class AmbientView extends View {
                           float alpha) {
         int[] lc = {k.color};
         float lw = DotFont.draw(c, k.label, x, top, p, p * 0.36f, dot, lc, alpha);
-        int cols = (int) ((room - lw) / p) - 3;
+        int cols = (int) ((room - lw) / p) - 5;
         String text = WheelView.fit(k.text, Math.max(4, cols));
-        DotFont.draw(c, text, x + lw + p * 3, top, p, p * 0.36f, dot, DIM, alpha);
+        DotFont.draw(c, text, x + lw + p * 5, top, p, p * 0.36f, dot, DIM, alpha);
     }
 
     boolean isIdle() {
@@ -297,7 +297,7 @@ final class AmbientView extends View {
 
         // The bottom of the screen is shared. Normal mode: it's the train's track.
         // Idle mode: the news ticker runs there, and a train rides on top of it like rails.
-        float trackY = h * 0.96f;
+        float trackY = h * 0.985f;    // low, so the time above it clears the wheel
         boolean ticker = idle > 0.01f && news != null && !news.isEmpty();
         if (ticker) {
             float np = h / 170f;
@@ -317,8 +317,8 @@ final class AmbientView extends View {
         float lw = DotFont.draw(c, "NYT", left, top, p, p * 0.36f, dot, NYT_LABEL, alpha);
         // A short faint bar between the label and the moving text.
         dot.setColor(Doodles.withAlpha(CARD, alpha));
-        for (int i = 0; i < 7; i++) c.drawCircle(left + lw + p * 2.5f, top + i * p + p / 2f, p * 0.3f, dot);
-        float x0 = left + lw + p * 5f;
+        for (int i = 0; i < 7; i++) c.drawCircle(left + lw + p * 4f, top + i * p + p / 2f, p * 0.3f, dot);
+        float x0 = left + lw + p * 8f;
 
         // One loop = every headline plus a separator after each.
         float sep = p * 8f;
@@ -406,9 +406,10 @@ final class AmbientView extends View {
         float blockH = dinoH + h * 0.02f + 7 * cp + h * 0.04f + 7 * dp
                 + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP) + calH;
 
-        // Centered and still.
+        // Centered and still; nudged up when the news ticker (and maybe a train) runs below.
         float x = (w - blockW) / 2f;
         float y = (h - blockH) / 2f;
+        if (news != null && !news.isEmpty()) y -= h * 0.055f;
 
         // Walk only above the clock digits (not past them over the AM/PM).
         float digitsW = DotFont.cols(time) * cp;

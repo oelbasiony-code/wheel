@@ -24,7 +24,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   repo is public); it is read from `/sdcard/Android/data/com.omar.wheel/files/calendar.txt`
   on the stick (one link per line). Fire OS 8 blocks adb from that folder, so send it through
   the app instead: `./adb shell "am start -n com.omar.wheel/.MainActivity --es calendar_link 'LINK'"`
-  (several links: separate with spaces). Without a link the card says NO CALENDAR LINK YET.
+  (several links: separate with spaces). Without a link the card says CAL NO LINK YET.
 - `TrainDoodle.java`: the dot-matrix commuter rail train along the bottom.
 - `News.java`: NYT headlines from the public RSS feed (no key) for idle mode's ticker.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
@@ -87,14 +87,17 @@ in the 30 minutes before the next train.
 2. **The bottom of the screen is shared**: in normal mode it's the train's track; in idle mode
    the NYT ticker runs there, and if a train is due during idle it rides on top of the ticker
    line like rails. Never put the train at the top.
+Items 3-6 are queued: don't start them until Omar says so.
+
 3. **Startup sequence**: when Wheel first appears after the TV turns on, a ~2 s dot-matrix
    boot (dots fly in, "WELCOME BACK, OMAR", wheel builds itself). JARVIS feel.
 4. **Morning briefing**: first time on before 11 am, a full-screen moment with weather, first
    calendar event, next train; then settles into the wheel.
 5. **Messages to the TV**: a phone Shortcut sends text that pops up in dots (free push service
    such as ntfy.sh, topic name kept off the public repo like the calendar link).
-6. **Govee lights**: Omar has Govee lights. Prefer Govee's LAN API (UDP, port 4003, needs
-   "LAN Control" switched on per device in the Govee Home app); fall back to the cloud API key.
-   Idea: a LIGHTS tile, and dimming when a movie app opens.
+6. **Govee lights turn on with the TV**: Omar has Govee lights. When the TV turns on (Wheel
+   comes up after the stick wakes), switch the Govee lights on too. No dimming for movies.
+   Prefer Govee's LAN API (UDP, port 4003, needs "LAN Control" switched on per device in the
+   Govee Home app); fall back to the cloud API key.
 
 Not wanted: sunrise/sunset, prayer times, countdowns, sports scores. Reminders: later.
