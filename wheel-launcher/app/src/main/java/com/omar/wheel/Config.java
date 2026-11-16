@@ -140,6 +140,14 @@ final class Config {
     /** The Roku TV's IP address (Settings > Network > About). "" = find it on the network. */
     static final String ROKU_TV_IP = "";
 
+    /**
+     * The Govee strip's light while you're on Wheel (and when it turns on with the TV):
+     * a white temperature in kelvin (2700 = warm, like a lamp) and brightness 1-100.
+     * HOME_LIGHT_K = 0: no home light, the strip goes back to whatever it showed before.
+     */
+    static final int HOME_LIGHT_K = 2700;
+    static final int HOME_LIGHT_BRIGHTNESS = 60;
+
     static final Brand PLAYSTATION = new Brand("PLAYSTATION", new int[]{0xFF2E8BFF},
             new String[]{}, new String[]{})
             .pixels(

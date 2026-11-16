@@ -96,6 +96,7 @@ final class Govee {
             @Override
             public void run() {
                 power(c, true);
+                home(c);
             }
         });
     }
@@ -146,6 +147,11 @@ final class Govee {
                 SharedPreferences p = sp(c);
                 if (!p.getBoolean(K_TINTED, false)) return;
                 try {
+                    if (Config.HOME_LIGHT_K > 0) {
+                        home(c);
+                        p.edit().putBoolean(K_TINTED, false).apply();
+                        return;
+                    }
                     State saved = State.fromJson(p.getString(K_SAVED, null));
                     State now = read(c);
                     if (saved != null && now != null && now.on) restore(c, now, saved);
@@ -155,6 +161,24 @@ final class Govee {
                 p.edit().putBoolean(K_TINTED, false).apply();
             }
         });
+    }
+
+    /** Wheel's own light: warm white (Config.HOME_LIGHT_K) at HOME_LIGHT_BRIGHTNESS. */
+    private static void home(Context c) {
+        if (Config.HOME_LIGHT_K <= 0) return;
+        try {
+            String ip = lanIp(c);
+            if (ip != null) {
+                lanSend(ip, "colorwc", new JSONObject().put("color", rgbJson(0))
+                        .put("colorTemInKelvin", Config.HOME_LIGHT_K));
+                lanSend(ip, "brightness", new JSONObject().put("value", Config.HOME_LIGHT_BRIGHTNESS));
+                return;
+            }
+            cloud(c, "devices.capabilities.color_setting", "colorTemperatureK", Config.HOME_LIGHT_K);
+            cloud(c, "devices.capabilities.range", "brightness", Config.HOME_LIGHT_BRIGHTNESS);
+        } catch (Exception e) {
+            Log.d(HomeWatcher.TAG, "govee home: " + e);
+        }
     }
 
     // ---------------------------------------------------------------- the strip's state
