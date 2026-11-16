@@ -287,9 +287,9 @@ final class Startup {
             if (m[0] > 0) mLine = m[0] + (m[0] == 1 ? " MESSAGE" : " MESSAGES");
             if (m[1] > 0) mLine += (mLine.isEmpty() ? "" : ", ") + m[1] + " MAIL";
         }
-        String[] labels = {"WEATHER", "CAL", "MSG/MAIL"};   // the card's labels and colors
-        String[] vals = {DotFont.clean(wLine), DotFont.clean(eLine), DotFont.clean(mLine)};
-        int[] labelColors = {BLUE, WheelView.TICK_CAL, WheelView.TICK_MSG};
+        String[] labels = {"WEATHER", "MSG/MAIL", "CAL"};   // the card's labels and colors
+        String[] vals = {DotFont.clean(wLine), DotFont.clean(mLine), DotFont.clean(eLine)};
+        int[] labelColors = {BLUE, WheelView.TICK_MSG, WheelView.TICK_CAL};
 
         // Lay the whole thing out as one block, centered on screen.
         float labelW = DotFont.cols("MSG/MAIL") * lp + p * 6;
@@ -333,7 +333,7 @@ final class Startup {
             if (k > 0f) {
                 float ry = y + (1f - k) * lift - leave;
                 DotFont.draw(c, labels[i], left, ry + (rowH - 7 * lp) / 2f, lp, lp * r, dot,
-                        i == 2 ? msgMail : new int[]{labelColors[i]}, k);
+                        i == 1 ? msgMail : new int[]{labelColors[i]}, k);
                 DotFont.draw(c, vals[i], left + labelW, ry, p, p * r, dot, new int[]{CREAM}, k);
             }
             y += rowH + rowGap;
