@@ -91,7 +91,7 @@ final class TrainDoodle {
             float lp = pitch * 0.8f;
             float lw = DotFont.cols(label) * lp;
             float lx = x + (COACHES * (COACH[0].length() + GAP) * pitch - lw) / 2f;
-            DotFont.draw(c, label, lx, top - lp * 9f, lp, lp * 0.36f, p, new int[]{STRIPE}, alpha);
+            DotFont.draw(c, label, lx, top - lp * 10.5f, lp, lp * 0.36f, p, new int[]{STRIPE}, alpha);
         }
     }
 
@@ -131,15 +131,16 @@ final class TrainDoodle {
     private static void smoke(Canvas c, Paint p, float t, float w, float len, float pitch,
                               float top, float alpha) {
         final float every = 0.075f;     // a puff every ~1.1 s of the pass
-        final float life = 0.13f;       // each lasts ~2 s
+        final float life = 0.045f;      // each lasts ~0.7 s, so it stays near the stack
+                                        // (and out of the time label above)
         float locoLeft = COACHES * (COACH[0].length() + GAP) * pitch;
         int newest = (int) (t / every);
         for (int k = newest; k >= 0 && t - k * every < life; k--) {
             float born = k * every;
             float age = (t - born) / life;               // 0..1
             float sx = trainX(born, w, len, pitch) + locoLeft + (STACK_COL + 1) * pitch;
-            float sy = top - pitch * (1.5f + age * 6f);
-            int rad = 1 + (int) (age * 2.5f);             // grows from a dot to a small cloud
+            float sy = top - pitch * (1.2f + age * 1.3f);
+            int rad = (int) (age * 2f);                   // grows from a dot to a little puff
             float a = alpha * 0.55f * (1f - age);
             p.setColor(Doodles.withAlpha(SMOKE, a));
             float dr = pitch * 0.32f;
