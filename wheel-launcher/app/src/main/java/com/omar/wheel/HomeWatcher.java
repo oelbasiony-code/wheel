@@ -161,7 +161,10 @@ public final class HomeWatcher extends AccessibilityService {
         });
     }
 
-    /** While the envelope is up, ☰ opens/closes it and Back closes it. Every other key is left alone. */
+    /**
+     * While the envelope is up, ☰ opens and closes it. Every other key is left alone.
+     * (Not Back: Fire OS hands Back to the app anyway, so it would also back out of your show.)
+     */
     @Override
     protected boolean onKeyEvent(KeyEvent e) {
         final MessageOverlay o = overlay;
@@ -180,16 +183,6 @@ public final class HomeWatcher extends AccessibilityService {
                         overlay.setOpen(true);
                         h.removeCallbacks(iconTimeout);
                     }
-                }
-            });
-            return true;
-        }
-        if (code == KeyEvent.KEYCODE_BACK && o.isOpen()) {
-            if (up) h.post(new Runnable() {
-                @Override
-                public void run() {
-                    Messages.markRead(HomeWatcher.this);
-                    removeOverlay();
                 }
             });
             return true;

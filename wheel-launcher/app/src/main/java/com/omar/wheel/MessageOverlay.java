@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * What a message looks like over another app (Netflix, a game...): a small dot envelope
  * in the top-right corner. Press the Menu button (☰) to open it in a small card there;
- * ☰ or Back closes it. Shown by HomeWatcher, which can draw over other apps.
+ * ☰ again closes it. Shown by HomeWatcher, which can draw over other apps.
  */
 final class MessageOverlay extends View {
 

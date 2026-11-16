@@ -165,7 +165,7 @@ final class AmbientView extends View {
         float k = Math.min(1f, t / (float) MESSAGE_IN_MS);
         float e = 1f - (1f - k) * (1f - k) * (1f - k);
         // Dim everything behind it.
-        c.drawColor(Doodles.withAlpha(0xC0000000, e));
+        c.drawColor(Doodles.withAlpha(0xD8000000, e));
 
         float p = h / 130f;
         float cardW = w * 0.56f;
@@ -178,6 +178,9 @@ final class AmbientView extends View {
         float x = (w - cardW) / 2f;
         // Slides up into place, like the card.
         float y = (h - cardH) / 2f + (1f - e) * p * 8;
+        // Solid inside, so nothing behind shows through the words.
+        dot.setColor(Doodles.withAlpha(0xFF000000, e));
+        c.drawRoundRect(new android.graphics.RectF(x, y, x + cardW, y + cardH), p * 2, p * 2, dot);
         drawCard(c, x, y, cardW, cardH, p * 0.7f, e);
         float ty = y + pad;
         DotFont.draw(c, "MESSAGE", x + pad, ty, labelP, labelP * 0.36f, dot,
