@@ -42,7 +42,7 @@ final class AmbientView extends View {
     // The rotating line: which message, and since when. Messages slide up into place,
     // like a Smart Stack on an iPhone.
     private static final long TICK_MS = 7000;
-    private static final long SLIDE_MS = 450;
+    private static final long SLIDE_MS = 700;
     private int tickIdx, prevIdx;
     private long tickSince, slideStart;
     private int slideDir = 1;      // 1 = new message comes up from below, -1 = from above

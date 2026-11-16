@@ -57,7 +57,7 @@ final class Govee {
         if (pkg.startsWith("com.hulu")) return 0x1CE783;
         if (pkg.startsWith("com.amazon.avod") || pkg.contains("primevideo")) return 0x00A8E1;
         if (pkg.startsWith("com.peacock")) return 0xF5B800;
-        if (pkg.startsWith("com.google.android.youtube")) return 0xFF1A1A;
+        if (pkg.contains("youtube")) return 0xFF1A1A;   // Google's and Amazon's YouTube TV builds
         if (pkg.startsWith("com.apple.atve")) return 0xC8D2FF;   // soft cool white
         if (pkg.startsWith("com.wbd") || pkg.startsWith("com.hbo")) return 0x6A2CFF;
         return 0;
@@ -137,21 +137,23 @@ final class Govee {
         });
     }
 
-    /** Back on Wheel: fade back to what the strip showed before the app. */
+    /** Back on Wheel: the home light (or, without one, what the strip showed before the app). */
     static void untint(Context ctx) {
         final Context c = ctx.getApplicationContext();
-        if (!sp(c).getBoolean(K_TINTED, false)) return;
+        if (Config.HOME_LIGHT_K <= 0 && !sp(c).getBoolean(K_TINTED, false)) return;
         q.execute(new Runnable() {
             @Override
             public void run() {
                 SharedPreferences p = sp(c);
-                if (!p.getBoolean(K_TINTED, false)) return;
                 try {
                     if (Config.HOME_LIGHT_K > 0) {
-                        home(c);
+                        // Only send what's needed: the cloud allows a few commands a minute.
+                        State now = read(c);
+                        if (now != null && now.on && !isHome(now)) home(c);
                         p.edit().putBoolean(K_TINTED, false).apply();
                         return;
                     }
+                    if (!p.getBoolean(K_TINTED, false)) return;
                     State saved = State.fromJson(p.getString(K_SAVED, null));
                     State now = read(c);
                     if (saved != null && now != null && now.on) restore(c, now, saved);
@@ -161,6 +163,13 @@ final class Govee {
                 p.edit().putBoolean(K_TINTED, false).apply();
             }
         });
+    }
+
+    private static boolean isHome(State s) {
+        boolean n = night();
+        int k = n ? Config.NIGHT_LIGHT_K : Config.HOME_LIGHT_K;
+        int b = n ? Config.NIGHT_LIGHT_BRIGHTNESS : Config.HOME_LIGHT_BRIGHTNESS;
+        return s.rgb == 0 && s.kelvin == k && s.brightness == b;
     }
 
     /** True from 9 pm to 5 am (Config.NIGHT_FROM_HOUR / NIGHT_UNTIL_HOUR). */

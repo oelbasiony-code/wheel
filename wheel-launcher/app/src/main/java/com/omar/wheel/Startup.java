@@ -24,7 +24,7 @@ import java.util.TimeZone;
  */
 final class Startup {
 
-    private static final long FLY_MS = 1100, HOLD_MS = 700, SWEEP_MS = 1400;
+    private static final long FLY_MS = 1400, HOLD_MS = 800, SWEEP_MS = 2200;
     private static final long BOOT_MS = FLY_MS + HOLD_MS + SWEEP_MS;
     private static final long BRIEF_IN_MS = 700, BRIEF_MS = 10000, BRIEF_OUT_MS = 1200;
     /** The day's briefing waits for the first time the TV comes on at or after this hour. */
