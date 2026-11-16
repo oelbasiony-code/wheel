@@ -86,6 +86,7 @@ final class Messages {
     /** The last text (or email) if it came in the last 5 minutes, else null. */
     static String fresh(Context c, long now, boolean mail) {
         SharedPreferences p = sp(c);
+        if (p.getBoolean(mail ? "mail_opened" : "msg_opened", false)) return null;   // read it
         long t = p.getLong(mail ? K_MAIL_TIME : K_TIME, 0);
         return now - t < FRESH_MS ? p.getString(mail ? K_MAIL_TEXT : K_TEXT, null) : null;
     }
@@ -214,6 +215,7 @@ final class Messages {
                         .putLong(mail ? K_MAIL_TIME : K_TIME, System.currentTimeMillis())
                         .putBoolean(K_UNREAD, true)
                         .putBoolean(K_UNREAD_MAIL, mail)
+                        .putBoolean(mail ? "mail_opened" : "msg_opened", false)
                         .apply();
                 if (clean.isEmpty()) continue;
                 addToHistory(p, clean, mail, nowMs);
@@ -281,9 +283,11 @@ final class Messages {
         }
     }
 
-    /** Opened it: no longer missed. */
+    /** Opened it: no longer missed, and off the card if it's the newest one. */
     static void markItemRead(Context c, String text) {
         SharedPreferences p = sp(c);
+        if (text.equals(p.getString(K_TEXT, null))) p.edit().putBoolean("msg_opened", true).apply();
+        if (text.equals(p.getString(K_MAIL_TEXT, null))) p.edit().putBoolean("mail_opened", true).apply();
         try {
             org.json.JSONArray a = new org.json.JSONArray(p.getString(K_HISTORY, "[]"));
             for (int i = 0; i < a.length(); i++) {
