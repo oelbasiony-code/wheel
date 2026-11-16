@@ -547,7 +547,7 @@ final class WheelView extends View {
         }
     }
 
-    static final int TICK_CAL = 0xFFEDE6DA, TICK_FACT = 0xFFE8C872, TICK_RAIN = 0xFF8FB8DE;
+    static final int TICK_CAL = 0xFFEDE6DA, TICK_WORD = 0xFFE8C872, TICK_RAIN = 0xFF8FB8DE;
 
     /** Everything the rotating line cycles through right now. */
     List<Tick> tickerItems(long now) {
@@ -557,7 +557,7 @@ final class WheelView extends View {
         if (noCalendarLink) out.add(new Tick("CAL", "NO LINK YET", TICK_CAL));
 
         // The next train isn't on the card: the train itself rolls by before it leaves.
-        out.add(new Tick("FACT", Facts.today(now, tz), TICK_FACT));
+        out.add(new Tick("WORD", Words.today(now, tz), TICK_WORD));
 
         Weather.Extra x = weatherExtra;
         if (x != null) {

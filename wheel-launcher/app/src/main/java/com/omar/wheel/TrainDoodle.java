@@ -87,11 +87,11 @@ final class TrainDoodle {
         smoke(c, p, t, w, len, pitch, top, alpha);
 
         if (label != null) {
-            // Small, centered over the whole train, just above the smoke.
+            // Small, centered over the whole train, just above the roof and the puffs.
             float lp = pitch * 0.55f;
             float lw = DotFont.cols(label) * lp;
             float lx = x + (len - lw) / 2f;
-            float ly = top - pitch * 3.8f - 7 * lp;
+            float ly = top - pitch * 2.6f - 7 * lp;
             DotFont.draw(c, label, lx, ly, lp, lp * 0.38f, p, new int[]{STRIPE}, alpha);
         }
     }
@@ -140,8 +140,8 @@ final class TrainDoodle {
             float born = k * every;
             float age = (t - born) / life;               // 0..1
             float sx = trainX(born, w, len, pitch) + locoLeft + (STACK_COL + 1) * pitch;
-            float sy = top - pitch * (1.2f + age * 1.3f);
-            int rad = (int) (age * 2f);                   // grows from a dot to a little puff
+            float sy = top - pitch * (0.8f + age * 0.6f);
+            int rad = (int) (age * 1.6f);                 // a dot, then a little puff
             float a = alpha * 0.55f * (1f - age);
             p.setColor(Doodles.withAlpha(SMOKE, a));
             float dr = pitch * 0.32f;

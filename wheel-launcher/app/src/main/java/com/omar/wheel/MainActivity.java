@@ -135,8 +135,8 @@ public final class MainActivity extends Activity implements WheelView.Host {
 
     /**
      * `am start ... --ez train_demo true` sends a train across right away, to try it out.
-     * `am start ... --es calendar_link URL` saves the private calendar link on the stick
-     * (newer Fire OS won't let adb write into the app's folder directly).
+     * `am start ... --es calendar_url 'LINK LINK'` saves the private calendar link(s) in the
+     * app's private storage (Fire OS won't let adb write into the app's folder directly).
      */
     private void checkDemo(android.content.Intent i) {
         if (i == null) return;
@@ -148,8 +148,10 @@ public final class MainActivity extends Activity implements WheelView.Host {
             i.removeExtra("idle_demo");
             ambient.demoIdle();
         }
-        String link = i.getStringExtra("calendar_link");
+        String link = i.getStringExtra("calendar_url");
+        if (link == null) link = i.getStringExtra("calendar_link");   // older name, same thing
         if (link != null) {
+            i.removeExtra("calendar_url");
             i.removeExtra("calendar_link");
             toast(Agenda.saveLinks(this, link) ? "Calendar link saved" : "Couldn't save the calendar link");
             lastAgenda = 0;

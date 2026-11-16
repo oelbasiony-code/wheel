@@ -21,15 +21,14 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   icon, seasonal effects, the rotating info line, idle mode).
 - `DotFont.java` (5x7 font), `Doodles.java` (dino, weather icons), `Season.java` (holidays).
 - `Agenda.java`: Google Calendar via the private iCal link. The link is NOT in the repo (the
-  repo is public); it is read from `/sdcard/Android/data/com.omar.wheel/files/calendar.txt`
-  on the stick (one link per line). Fire OS 8 blocks adb from that folder, so send it through
-  the app instead: `./adb shell "am start -n com.omar.wheel/.MainActivity --es calendar_link 'LINK'"`
-  (several links: separate with spaces). Without a link the card says CAL NO LINK YET.
-  The link is secret (anyone with it can read the calendar): Omar runs that command himself;
-  never ask him to paste it in chat.
+  repo is public). It's saved in the app's private storage (SharedPreferences), set with
+  `./adb shell "am start -n com.omar.wheel/.MainActivity --es calendar_url 'LINK'"`
+  (several links: separate with spaces). Fire OS 8 denies adb any access to
+  /sdcard/Android/data/com.omar.wheel, so files there can't be used. Without a link the card
+  says CAL NO LINK YET. The link is secret: Omar runs that command himself; never ask him for it.
 - `TrainDoodle.java`: the dot-matrix commuter rail train along the bottom.
 - `News.java`: NYT headlines from the public RSS feed (no key) for the bottom ticker.
-- `Facts.java`: built-in fun fact of the day (one per day, cycles the list).
+- `Words.java`: built-in word of the day (just the word, no definition).
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
 - `Weather.java`: Open-Meteo (no key).
 - `RokuTv.java`: PLAYSTATION / XBOX tiles switch the TV input over Roku ECP (port 8060).
@@ -77,7 +76,7 @@ phase, idle mode, holidays (Halloween, Thanksgiving, Christmas, Ramadan, Eid, bi
 PS5/Xbox input switching, Google Calendar, MBTA trains, and a rotating info line above the
 greeting, now a Smart Stack card (faint dotted rounded box, messages slide up, position dots
 on the right, long text scrolls sideways). It rotates Calendar (tomorrow's first event when
-today is empty) and a fun fact of the day, with a rain warning when relevant. No train on the
+today is empty) and a word of the day (just the word), with a rain warning when relevant. No train on the
 card (Omar's call: the train animation covers it).
 Commuter rail train: rolls along the bottom with "NEXT TRAIN TO BOSTON 4:58 AM" (small,
 centered over it), every 5 minutes in the 30 minutes before the next train.

@@ -4,8 +4,6 @@ import android.content.Context;
 import android.os.Handler;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -24,10 +22,10 @@ import java.util.TimeZone;
 /**
  * Your Google Calendar (or any calendar's iCal link), shown on the panel.
  *
- * The link is private, so it is NOT in the code (the repo is public). It lives in
- * a file on the Fire Stick that you put there once with adb:
- *   /sdcard/Android/data/com.omar.wheel/files/calendar.txt
- * One link per line; several calendars are merged.
+ * The link is private, so it is NOT in the code (the repo is public). It's saved in
+ * the app's own private storage on the Fire Stick, sent once with adb:
+ *   adb shell "am start -n com.omar.wheel/.MainActivity --es calendar_url 'LINK'"
+ * Several calendars: separate the links with spaces; they're merged.
  */
 final class Agenda {
 
@@ -38,24 +36,21 @@ final class Agenda {
     }
 
     interface Callback {
-        /** events = null if nothing could be loaded (no file, or every fetch failed). */
+        /** events = null if nothing could be loaded (no link saved, or every fetch failed). */
         void onAgenda(List<Event> events);
     }
 
     /** How far around "now" occurrences are collected. */
     private static final long DAY = 24 * 60 * 60 * 1000L;
 
-    static File linkFile(Context ctx) {
-        File dir = ctx.getExternalFilesDir(null);
-        return dir == null ? null : new File(dir, "calendar.txt");
-    }
+    private static final String PREFS = "wheel", KEY_LINKS = "calendar_urls";
 
     static void fetch(final Context ctx, final Handler ui, final Callback cb) {
-        final File f = linkFile(ctx.getApplicationContext());
+        final List<String> links = links(ctx);
         new Thread(new Runnable() {
             @Override
             public void run() {
-                List<Event> out = load(f);
+                List<Event> out = load(links);
                 final List<Event> res = out;
                 ui.post(new Runnable() {
                     @Override
@@ -67,8 +62,7 @@ final class Agenda {
         }, "wheel-agenda").start();
     }
 
-    private static List<Event> load(File f) {
-        List<String> links = readLinks(f);
+    private static List<Event> load(List<String> links) {
         if (links.isEmpty()) return null;
         long now = System.currentTimeMillis();
         long from = now - DAY, to = now + 3 * DAY;
@@ -100,19 +94,14 @@ final class Agenda {
         return all;
     }
 
-    private static List<String> readLinks(File f) {
+    /** The saved calendar links (webcal:// turned into https://). */
+    static List<String> links(Context ctx) {
         List<String> out = new ArrayList<>();
-        if (f == null || !f.exists()) return out;
-        try {
-            BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
-            String line;
-            while ((line = r.readLine()) != null) {
-                line = line.trim();
-                if (line.startsWith("webcal://")) line = "https://" + line.substring(9);
-                if (line.startsWith("http")) out.add(line);
-            }
-            r.close();
-        } catch (Exception ignored) {
+        String saved = ctx.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getString(KEY_LINKS, "");
+        for (String link : saved.trim().split("\\s+")) {
+            if (link.startsWith("webcal://")) link = "https://" + link.substring(9);
+            if (link.startsWith("http")) out.add(link);
         }
         return out;
     }
@@ -164,23 +153,16 @@ final class Agenda {
         return out;
     }
 
-    /** Saves the private calendar link(s) on the stick (sent with adb, never in the repo). */
+    /** Saves the private calendar link(s), separated by spaces, in the app's private storage. */
     static boolean saveLinks(Context ctx, String links) {
-        File f = linkFile(ctx.getApplicationContext());
-        if (f == null || links == null) return false;
-        try {
-            java.io.FileOutputStream o = new java.io.FileOutputStream(f);
-            o.write(links.trim().replaceAll("[\\s,]+", "\n").concat("\n").getBytes("UTF-8"));
-            o.close();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        if (links == null) return false;
+        return ctx.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putString(KEY_LINKS, links.trim()).commit();
     }
 
     /** True if a calendar link has been set up on this stick. */
     static boolean hasLink(Context ctx) {
-        return !readLinks(linkFile(ctx.getApplicationContext())).isEmpty();
+        return !links(ctx).isEmpty();
     }
 
     /** 9A, 9:30A, 12P. */
