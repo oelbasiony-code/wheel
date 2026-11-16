@@ -26,7 +26,9 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   (several links: separate with spaces). Fire OS 8 denies adb any access to
   /sdcard/Android/data/com.omar.wheel, so files there can't be used. Without a link the card
   says CAL NO LINK YET. The link is secret: Omar runs that command himself; never ask him for it.
-- `TrainDoodle.java`: the dot-matrix commuter rail train along the bottom.
+- `TrainDoodle.java`: the dot-matrix commuter rail train along the bottom, with a smoke trail.
+  Whistle (res/raw/choo.wav, made by a script, soft two-blast chord): first and last pass of the
+  hour and test passes (Config.TRAIN_SOUND / TRAIN_SOUND_VOLUME).
 - `News.java`: NYT headlines from the public RSS feed (no key) for the bottom ticker.
 - `Words.java`: built-in word of the day (just the word, no definition).
 - `Messages.java`: messages to the TV over ntfy.sh (no account). Wheel keeps a connection open

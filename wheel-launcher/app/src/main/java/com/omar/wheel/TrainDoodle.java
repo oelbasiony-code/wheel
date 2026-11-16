@@ -5,8 +5,9 @@ import android.graphics.Paint;
 
 /**
  * A dot-matrix commuter rail train (MBTA purple) that rolls along the bottom of the
- * screen with its departure time riding above it. It only runs in the half hour
- * before your train leaves, once every few minutes, so it stays special.
+ * screen with its departure time riding above it, puffing smoke. It only runs in the hour
+ * before your train leaves, once every 5 minutes, so it stays special. (The whistle is in
+ * AmbientView: first and last pass of the hour.)
  */
 final class TrainDoodle {
 
@@ -87,11 +88,11 @@ final class TrainDoodle {
         smoke(c, p, t, w, len, pitch, top, alpha);
 
         if (label != null) {
-            // Small, centered over the whole train, just above the roof and the puffs.
+            // Small, centered over the whole train, above the smoke.
             float lp = pitch * 0.55f;
             float lw = DotFont.cols(label) * lp;
             float lx = x + (len - lw) / 2f;
-            float ly = top - pitch * 2.6f - 7 * lp;
+            float ly = top - pitch * 8.5f - 7 * lp;   // above the smoke
             DotFont.draw(c, label, lx, ly, lp, lp * 0.38f, p, new int[]{STRIPE}, alpha);
         }
     }
@@ -138,28 +139,32 @@ final class TrainDoodle {
         }
     }
 
-    /** Small puffs from the stack that rise, spread, and fade where they were left behind. */
+    /**
+     * Puffs from the stack: each rises, spreads into a loose cloud and fades, staying where it
+     * was let out, so a trail drifts back over the coaches as the train rolls on.
+     */
     private static void smoke(Canvas c, Paint p, float t, float w, float len, float pitch,
                               float top, float alpha) {
-        final float every = 0.075f;     // a puff every ~1.1 s of the pass
-        final float life = 0.045f;      // each lasts ~0.7 s, so it stays near the stack
-                                        // (and out of the time label above)
+        final float every = 0.05f;      // a puff every ~0.75 s of the pass
+        final float life = 0.17f;       // each lasts ~2.5 s
         float locoLeft = COACHES * (COACH[0].length() + GAP) * pitch;
         int newest = (int) (t / every);
+        float dr = pitch * 0.32f;
         for (int k = newest; k >= 0 && t - k * every < life; k--) {
             float born = k * every;
             float age = (t - born) / life;               // 0..1
-            float sx = trainX(born, w, len, pitch) + locoLeft + (STACK_COL + 1) * pitch;
-            float sy = top - pitch * (0.8f + age * 0.6f);
-            int rad = (int) (age * 1.6f);                 // a dot, then a little puff
-            float a = alpha * 0.55f * (1f - age);
+            float sx = trainX(born, w, len, pitch) + locoLeft + (STACK_COL + 1) * pitch
+                    - age * pitch * 3;                   // a little drift back
+            float sy = top - pitch * (1f + age * 4.5f);  // rises about 4 rows
+            float rad = 0.6f + age * 2.4f;               // a dot, then a soft cloud
+            float a = alpha * 0.6f * (1f - age) * (1f - age);
             p.setColor(Doodles.withAlpha(SMOKE, a));
-            float dr = pitch * 0.32f;
-            for (int dy = -rad; dy <= rad; dy++) {
-                for (int dx = -rad; dx <= rad; dx++) {
+            int ri = (int) Math.ceil(rad);
+            for (int dy = -ri; dy <= ri; dy++) {
+                for (int dx = -ri; dx <= ri; dx++) {
                     if (dx * dx + dy * dy > rad * rad) continue;
-                    // A loose, airy cloud: skip every other dot once it has spread.
-                    if (rad > 1 && ((dx + dy) & 1) != 0) continue;
+                    // Airy: skip a checkerboard of dots once it has spread.
+                    if (rad > 1.5f && ((dx + dy + k) & 1) != 0) continue;
                     c.drawCircle(sx + dx * pitch, sy + dy * pitch, dr, p);
                 }
             }

@@ -598,8 +598,40 @@ final class AmbientView extends View {
         return TrainDoodle.progress(now, wheel.nextTrain(now));
     }
 
+    // The whistle: a soft two-blast "choo-choo" from the TV speakers, on the first pass of
+    // the hour (heads-up) and the last one (about 5 minutes out), and on a test pass.
+    private android.media.MediaPlayer whistle;
+    private long whistledFor;   // the pass that already whistled (its start time)
+
+    private void maybeWhistle(long now, float t) {
+        if (!Config.TRAIN_SOUND || t > 0.1f) return;
+        long passStart = now - (long) (t * TrainDoodle.PASS_MS);
+        if (Math.abs(passStart - whistledFor) < 2000) return;
+        boolean play;
+        if (demoTrain > 0) {
+            play = true;
+        } else {
+            long dep = wheel.nextTrain(now);
+            long until = dep - passStart;
+            play = until > TrainDoodle.WINDOW_MS - TrainDoodle.EVERY_MS            // first pass
+                    || until < TrainDoodle.EVERY_MS + TrainDoodle.PASS_MS;         // last pass
+        }
+        whistledFor = passStart;
+        if (!play) return;
+        try {
+            if (whistle == null) {
+                whistle = android.media.MediaPlayer.create(getContext(), R.raw.choo);
+                whistle.setVolume(Config.TRAIN_SOUND_VOLUME, Config.TRAIN_SOUND_VOLUME);
+            }
+            whistle.seekTo(0);
+            whistle.start();
+        } catch (Exception ignored) {
+        }
+    }
+
     /** The commuter rail train, with "NEXT TRAIN TO BOSTON 4:58 AM" above it. */
     private void drawTrain(Canvas c, long now, float t, float bottom, float pitch, float alpha) {
+        maybeWhistle(now, t);
         long dep = wheel.nextTrain(now);
         String label = "NEXT TRAIN TO " + Config.TRAIN_TO;
         if (dep > 0) {

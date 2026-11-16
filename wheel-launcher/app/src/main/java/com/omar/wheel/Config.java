@@ -45,6 +45,9 @@ final class Config {
     static final String TRAIN_ROUTE = "CR-Haverhill";
     static final int TRAIN_DIRECTION = 1;
     static final String TRAIN_TO = "BOSTON";
+    /** The train's whistle (first and last pass of the hour). Volume 0..1 of the TV's. */
+    static final boolean TRAIN_SOUND = true;
+    static final float TRAIN_SOUND_VOLUME = 0.6f;
 
     /**
      * Your wheel, top to bottom. Apps are matched on the Fire Stick by their
