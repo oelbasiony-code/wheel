@@ -94,10 +94,10 @@ public final class HomeWatcher extends AccessibilityService {
 
     // ---------------------------------------------------------------- TV on/off (asks the Roku)
 
-    private static final long TV_POLL_MS = 5 * 1000L;
+    private static final long TV_POLL_MS = 2 * 1000L;
     /** After the TV turns on: how long to wait for it to show the Fire Stick, and then
      *  for the picture to actually appear, before the startup sequence plays. */
-    private static final long WAIT_FOR_INPUT_MS = 5 * 60 * 1000L, PICTURE_MS = 2500;
+    private static final long WAIT_FOR_INPUT_MS = 5 * 60 * 1000L, PICTURE_MS = 1200;
     private long tvOnAt;   // when the TV came on and the startup hasn't played yet; 0 = none
     private volatile boolean tvWatching;
     private Thread tvThread;

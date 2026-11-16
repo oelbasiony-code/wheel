@@ -71,9 +71,9 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   PS5 = InputHDMI1, Xbox = InputHDMI2. TV must have Control by mobile apps = Enabled.
 - `HomeWatcher.java`: accessibility service + logcat watcher that sends the Home button to Wheel.
   Also knows when the TV turns on/off, for Govee and Startup: the stick does NOT sleep when the
-  Roku TV turns off, so it polls the TV's power-mode over ECP every 5 s (RokuTv.screenOn).
+  Roku TV turns off, so it polls the TV's power-mode over ECP every 2 s (RokuTv.screenOn).
   The startup sequence waits until the TV shows the Fire Stick (query/active-app =
-  Config.FIRE_TV_APP_ID, tvinput.hdmi4) plus 2.5 s for the picture, so Omar actually sees it.
+  Config.FIRE_TV_APP_ID, tvinput.hdmi4) plus 1.2 s for the picture, so Omar actually sees it.
 - `Govee.java`: the H615C strip. LAN API first (finds the strip by multicast scan, or
   `--es govee_ip 'IP'`); Govee cloud key as fallback (`--es govee_key 'KEY'`, secret, not in
   repo). Lights on/off with the TV only when the tile LIGHTS FOLLOW TV (all-apps list) is ON; off by default; opening an app
