@@ -77,10 +77,10 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   repo). Lights on/off with the TV only when the tile LIGHTS FOLLOW TV (all-apps list) is ON; off by default; opening an app
   from Wheel turns it that app's own color (Govee.colorFor, by package or wheel name: Netflix red,
   YouTube pink, Peacock orange, Tubi yellow, Hulu mint, Xbox pure green, Disney+ teal, Prime sky, PS deep blue,
-  HBO violet, Apple TV cool white). The strip runs green-heavy: yellow = FF9A00, orange = FF3C00. Cloud allows ~10 commands/min: only changes are sent, stale requests dropped, back on Wheel it goes to the home light: warm white 2700K at 60%, candlelight 2000K at 35% from 9 pm to 5 am (Config.HOME_LIGHT_*, NIGHT_*); it shifts by itself at 9 pm while you sit on Wheel.
+  HBO violet, Apple TV cool white). The strip runs green-heavy: yellow = FF9A00, orange = FF3C00. Cloud allows ~10 commands/min: only changes are sent, stale requests dropped, back on Wheel it goes to the home light: candlelight 2200K at 60%, candlelight 2000K at 35% from 9 pm to 5 am (Config.HOME_LIGHT_*, NIGHT_*); it shifts by itself at 9 pm while you sit on Wheel.
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
 - `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, hold,
-  fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first
+  fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first event, MISSED texts/emails since the TV went off (no train); was: weather, first
   event, next train, typed out). Any button skips. Try it: `--ez boot_demo true` (add
   `--ez briefing true`), or `--ez briefing_demo true`.
 
@@ -139,7 +139,7 @@ the top.
 
 All of Omar's picks are built and on the TV: messages (texts via iPhone Shortcut with contact
 names; BU email via Gmail forwarding to ntfy's email address), the envelope icon + MSG/MAIL
-cards, a calm sleep screen (dino, time, date, weather only; no news or card), Govee (cloud API key; app colors at 100%, home light warm white by day / candlelight
+cards, a calm sleep screen (dino, time, date, weather only; no news or card), Govee (cloud API key; app colors at 100%, home light candlelight 2200K by day / 2000K dimmer
 9 pm-5 am, LIGHTS FOLLOW TV tile, TV on/off from the Roku's power-mode), the startup
 sequence, the daily briefing (first TV-on at 5 am or later), the calendar
 countdown on the card, WORD OF DAY, centered idle mode.

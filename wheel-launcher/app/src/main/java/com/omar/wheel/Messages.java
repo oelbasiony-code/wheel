@@ -275,6 +275,26 @@ final class Messages {
         }
     }
 
+    /** The TV went off (HomeWatcher): what comes in after this is "missed". */
+    static void markTvOff(Context c) {
+        sp(c).edit().putLong("tv_off_at", System.currentTimeMillis()).apply();
+    }
+
+    /**
+     * For the briefing: {texts, emails} that came in since the TV last went off (or in the
+     * last 12 hours if that's longer ago).
+     */
+    static int[] missed(Context c, long now) {
+        long since = Math.max(sp(c).getLong("tv_off_at", 0), now - 12 * 3600000L);
+        int texts = 0, mails = 0;
+        for (Item it : history(c)) {
+            if (it.time < since) continue;
+            if (it.mail) mails++;
+            else texts++;
+        }
+        return new int[]{texts, mails};
+    }
+
     /** Newest first. */
     static List<Item> history(Context c) {
         List<Item> out = new ArrayList<>();

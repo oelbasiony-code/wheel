@@ -120,6 +120,7 @@ public final class HomeWatcher extends AccessibilityService {
                                 tvOnAt = System.currentTimeMillis();   // startup waits for the picture
                             } else {
                                 Govee.tvOff(c);
+                                Messages.markTvOff(c);
                                 tvOnAt = 0;
                             }
                         }

@@ -145,11 +145,11 @@ final class Config {
 
     /**
      * The Govee strip's light while you're on Wheel (and when it turns on with the TV):
-     * a white temperature in kelvin (2700 = warm, like a lamp) and brightness 1-100.
+     * a white temperature in kelvin (2700 = a lamp, 2200 = candlelight) and brightness 1-100.
      * From NIGHT_FROM_HOUR until NIGHT_UNTIL_HOUR it's candlelight instead (warmer, dimmer).
      * HOME_LIGHT_K = 0: no home light, the strip goes back to whatever it showed before.
      */
-    static final int HOME_LIGHT_K = 2700;
+    static final int HOME_LIGHT_K = 2200;          // candlelight (Omar's pick over plain warm white)
     static final int HOME_LIGHT_BRIGHTNESS = 60;
     static final int NIGHT_LIGHT_K = 2000;
     static final int NIGHT_LIGHT_BRIGHTNESS = 35;
