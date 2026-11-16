@@ -247,7 +247,7 @@ final class AmbientView extends View {
         demoTrain = System.currentTimeMillis();
     }
 
-    private static final int TICK_NYT = 0xFFB8B2A8;
+    private static final int TICK_NYT = 0xFFA99BF2;   // lavender
 
     /**
      * The card's items plus one NYT headline, a different one each time around the card.
