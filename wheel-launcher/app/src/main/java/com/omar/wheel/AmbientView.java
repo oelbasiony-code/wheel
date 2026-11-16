@@ -609,7 +609,7 @@ final class AmbientView extends View {
     private void maybeWhistle(long now, float t) {
         if (!Config.TRAIN_SOUND) return;
         long passStart = now - (long) (t * TrainDoodle.PASS_MS);
-        boolean arriving = t < 0.1f, leaving = t > 0.72f && t < 0.82f;
+        boolean arriving = t < 0.1f, leaving = t > 0.5f && t < 0.6f;   // second one about 7.5 s in
         if (!arriving && !leaving) return;
         if (arriving && Math.abs(passStart - whistledFor) < 2000) return;
         if (leaving && Math.abs(passStart - leftFor) < 2000) return;
