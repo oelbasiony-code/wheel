@@ -214,7 +214,7 @@ public final class MainActivity extends Activity implements WheelView.Host {
         Messages.start(this);
         Messages.addListener(onMessage);
         String unread = Messages.unread(this);
-        if (unread != null) ambient.showMessage(unread);   // the banner, 5 s
+        if (unread != null) ambient.showMessage(unread, Messages.unreadIsMail(this));   // the icon
     }
 
     /** True while Wheel is the app on screen (HomeWatcher then leaves messages to it). */
@@ -222,8 +222,8 @@ public final class MainActivity extends Activity implements WheelView.Host {
 
     private final Messages.Listener onMessage = new Messages.Listener() {
         @Override
-        public void onMessage(String text) {
-            ambient.showMessage(text);
+        public void onMessage(String text, boolean mail) {
+            ambient.showMessage(text, mail);
         }
     };
 
@@ -305,8 +305,8 @@ public final class MainActivity extends Activity implements WheelView.Host {
                 if (ambient.messageShowing()) {
                     ambient.dismissMessage();
                 } else {
-                    String last = Messages.recent(this, System.currentTimeMillis());
-                    if (last != null) ambient.openMessage(last);
+                    String[] last = Messages.latest(this, System.currentTimeMillis());
+                    if (last != null) ambient.openMessage(last[0], "mail".equals(last[1]));
                     else toast("No messages");
                 }
                 swallowKey = -1;
@@ -362,7 +362,11 @@ public final class MainActivity extends Activity implements WheelView.Host {
                 if (down && !wheel.onLeftRight(1)) ambient.stepTicker(1);
                 return true;
             case KeyEvent.KEYCODE_MENU:
-                if (act == KeyEvent.ACTION_UP) wheel.onMenu();
+                // A message icon in the corner: ☰ opens it. Otherwise the all-apps list.
+                if (act == KeyEvent.ACTION_UP) {
+                    if (ambient.iconShowing()) ambient.openIcon();
+                    else wheel.onMenu();
+                }
                 return true;
             case KeyEvent.KEYCODE_BACK:
                 // A home screen doesn't close on Back; Home still goes to Amazon's.

@@ -168,15 +168,15 @@ public final class HomeWatcher extends AccessibilityService {
 
     private static volatile HomeWatcher instance;
     private MessageOverlay overlay;
-    /** Like a phone notification: the banner shows this long, then goes away. */
-    private static final long BANNER_MS = 5 * 1000L;
+    /** Like a phone's notification icon: shows this long, then goes away. */
+    private static final long BANNER_MS = 10 * 1000L;
 
     private final Messages.Listener onMessage = new Messages.Listener() {
         @Override
-        public void onMessage(String text) {
+        public void onMessage(String text, boolean mail) {
             // On Wheel, Wheel draws the banner itself. Do Not Disturb: it waits for Wheel.
             if (MainActivity.onScreen || Messages.dnd(HomeWatcher.this)) return;
-            showOverlay(text);
+            showOverlay(mail);
         }
     };
 
@@ -187,7 +187,7 @@ public final class HomeWatcher extends AccessibilityService {
         }
     };
 
-    private void showOverlay(String text) {
+    private void showOverlay(boolean mail) {
         try {
             if (overlay == null) {
                 overlay = new MessageOverlay(this);
@@ -200,9 +200,8 @@ public final class HomeWatcher extends AccessibilityService {
                         android.graphics.PixelFormat.TRANSLUCENT);
                 ((WindowManager) getSystemService(WINDOW_SERVICE)).addView(overlay, lp);
             }
-            overlay.show(text);
-            // You've seen it, so Wheel won't pop it up again (still on the card).
-            Messages.markRead(this);
+            overlay.show(mail);
+            // Still unread: back on Wheel the icon shows again and ☰ opens it.
             h.removeCallbacks(iconTimeout);
             h.postDelayed(iconTimeout, BANNER_MS);
         } catch (Exception e) {

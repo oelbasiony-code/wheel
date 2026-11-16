@@ -553,7 +553,9 @@ final class WheelView extends View {
     String bootNews(long now) {
         TimeZone tz = TimeZone.getDefault();
         java.util.ArrayList<String> bits = new java.util.ArrayList<>();
-        if (Messages.unread(getContext()) != null) bits.add("NEW MESSAGE");
+        if (Messages.unread(getContext()) != null) {
+            bits.add(Messages.unreadIsMail(getContext()) ? "NEW MAIL" : "NEW MESSAGE");
+        }
         long train = nextTrain(now);
         if (train > now && train - now <= 30 * 60000L) {
             bits.add("TRAIN IN " + ((train - now) / 60000) + " MIN");
@@ -610,7 +612,8 @@ final class WheelView extends View {
         }
     }
 
-    static final int TICK_CAL = 0xFFEDE6DA, TICK_WORD = 0xFFE8C872, TICK_MSG = 0xFF9AD0C2, TICK_RAIN = 0xFF8FB8DE;
+    static final int TICK_CAL = 0xFFEDE6DA, TICK_WORD = 0xFFE8C872, TICK_MSG = 0xFF9AD0C2, TICK_RAIN = 0xFF8FB8DE,
+            TICK_MAIL = 0xFFE8A87C;
 
     /** Everything the rotating line cycles through right now. */
     List<Tick> tickerItems(long now) {
@@ -630,6 +633,8 @@ final class WheelView extends View {
 
         String msg = Messages.recent(getContext(), now);
         if (msg != null) out.add(new Tick("MSG", msg, TICK_MSG));
+        String mail = Messages.recentMail(getContext(), now);
+        if (mail != null) out.add(new Tick("MAIL", mail, TICK_MAIL));
         for (String[] l : Agenda.lines(agenda, now, tz, 3)) out.add(new Tick(l[0], l[1], TICK_CAL));
         if (calendarNote != null) out.add(new Tick("CAL", calendarNote, TICK_CAL));
 

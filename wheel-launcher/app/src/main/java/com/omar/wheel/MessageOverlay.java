@@ -3,25 +3,35 @@ package com.omar.wheel;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.RectF;
 import android.os.SystemClock;
 import android.view.View;
 
-import java.util.List;
-
 /**
- * What a message looks like over another app (Netflix, a game...): a small dot-matrix
- * card in the top-right corner, like a phone notification. It slides in, stays 5 seconds
- * (HomeWatcher removes it), and stays on Wheel's card afterwards.
+ * A new message or email, like a phone's notification icon: a small dot envelope in the
+ * top-right corner with a colored dot (teal = text, orange = mail). It slides in, stays
+ * 10 seconds and goes away by itself; it stays on Wheel's card afterwards (MSG / MAIL).
+ * On Wheel, ☰ opens it big in the middle (☰ again, Back or any button closes it).
+ * Over other apps it's only the icon: Fire OS doesn't reliably hand ☰ to Wheel there,
+ * so it waits for you on Wheel. HomeWatcher shows this view over apps; Wheel draws the
+ * same icon with drawIcon().
  */
 final class MessageOverlay extends View {
 
-    private static final int CREAM = 0xFFEDE6DA, FAINT = 0xFF3A3834;
-    private static final long IN_MS = 400;
+    private static final String[] ENVELOPE = {
+            "###########",
+            "##.......##",
+            "#.#.....#.#",
+            "#..#...#..#",
+            "#...#.#...#",
+            "#....#....#",
+            "#.........#",
+            "###########",
+    };
+    private static final int CREAM = 0xFFEDE6DA, DIM = 0xFF6E6A62;
+    private static final long IN_MS = 500;
 
     private final Paint dot = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final RectF box = new RectF();
-    private String text;
+    private boolean showing, mail;
     private long since;
 
     MessageOverlay(Context c) {
@@ -29,62 +39,51 @@ final class MessageOverlay extends View {
         dot.setStyle(Paint.Style.FILL);
     }
 
-    void show(String message) {
-        text = message;
+    void show(boolean isMail) {
+        showing = true;
+        mail = isMail;
         since = SystemClock.uptimeMillis();
         invalidate();
     }
 
     @Override
     protected void onDraw(Canvas c) {
-        if (text == null) return;
-        if (!drawBanner(c, getWidth(), getHeight(), text, since, dot, box)) return;
-        postInvalidateOnAnimation();
+        if (!showing) return;
+        if (drawIcon(c, getWidth(), getHeight(), mail, false, since, dot)) postInvalidateOnAnimation();
     }
 
-    /**
-     * Draws the banner (top-right card) and says whether it's still sliding in.
-     * Wheel draws the same banner itself.
-     */
-    static boolean drawBanner(Canvas c, float w, float h, String text, long since,
-                              Paint dot, RectF box) {
+    static int accent(boolean mail) {
+        return mail ? WheelView.TICK_MAIL : WheelView.TICK_MSG;
+    }
+
+    /** Draws the envelope; says whether it's still sliding in. withMenu = a small ☰ under it. */
+    static boolean drawIcon(Canvas c, float w, float h, boolean mail, boolean withMenu, long since,
+                            Paint dot) {
         float k = Math.min(1f, (SystemClock.uptimeMillis() - since) / (float) IN_MS);
-        float e = 1f - (1f - k) * (1f - k) * (1f - k);   // ease out
-
-        float p = h / 220f;
-        float cardW = w * 0.36f;
-        float pad = p * 4;
-        int maxCols = (int) ((cardW - 2 * pad) / p);
-        List<String> lines = DotFont.wrap(text, maxCols, 4);
-        float lineH = 10 * p;
-        float labelP = p * 0.6f;
-        float cardH = pad + 7 * labelP + p * 4 + (lines.size() - 1) * lineH + 7 * p + pad;
+        float e = 1f - (1f - k) * (1f - k) * (1f - k);
+        float p = h / 150f;
+        float ew = ENVELOPE[0].length() * p;
         float right = w * 0.95f;
-        float x = right - cardW;
-        // Slides down into place from just above.
-        float top = h * 0.06f - (1f - e) * p * 8;
+        float top = h * 0.06f - (1f - e) * p * 6;
+        float x = right - ew;
+        // A soft dark backing so it reads over a bright show.
+        dot.setColor(Math.round(e * 0x99) << 24);
+        c.drawCircle(x + ew / 2f, top + ENVELOPE.length * p / 2f, ew * 0.85f, dot);
         int a = Math.round(e * 255);
-
-        // Dark backing so it reads over a bright show.
-        dot.setColor((Math.round(e * 0xE6) << 24));
-        box.set(x, top, right, top + cardH);
-        c.drawRoundRect(box, p * 3, p * 3, dot);
-        dot.setColor((FAINT & 0x00FFFFFF) | (a << 24));
-        for (float xx = x + p * 3; xx <= right - p * 3; xx += p * 1.6f) {
-            c.drawCircle(xx, top, p * 0.3f, dot);
-            c.drawCircle(xx, top + cardH, p * 0.3f, dot);
+        dot.setColor((CREAM & 0x00FFFFFF) | (a << 24));
+        for (int r = 0; r < ENVELOPE.length; r++) {
+            for (int col = 0; col < ENVELOPE[r].length(); col++) {
+                if (ENVELOPE[r].charAt(col) != '#') continue;
+                c.drawCircle(x + col * p + p / 2f, top + r * p + p / 2f, p * 0.38f, dot);
+            }
         }
-        for (float yy = top + p * 3; yy <= top + cardH - p * 3; yy += p * 1.6f) {
-            c.drawCircle(x, yy, p * 0.3f, dot);
-            c.drawCircle(right, yy, p * 0.3f, dot);
-        }
-        float y = top + pad;
-        DotFont.draw(c, "MESSAGE", x + pad, y, labelP, labelP * 0.36f, dot,
-                new int[]{WheelView.TICK_MSG}, e);
-        y += 7 * labelP + p * 4;
-        for (String line : lines) {
-            DotFont.draw(c, line, x + pad, y, p, p * 0.36f, dot, new int[]{CREAM}, e);
-            y += lineH;
+        dot.setColor((accent(mail) & 0x00FFFFFF) | (a << 24));
+        c.drawCircle(right + p * 0.5f, top - p * 0.5f, p * 1.2f, dot);
+        if (withMenu) {
+            float hp = h / 300f;
+            String m = String.valueOf(DotFont.MENU);
+            DotFont.draw(c, m, x + (ew - DotFont.cols(m) * hp) / 2f, top + ENVELOPE.length * p + p * 2,
+                    hp, hp * 0.4f, dot, new int[]{DIM}, e);
         }
         return k < 1f;
     }

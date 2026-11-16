@@ -29,12 +29,14 @@ import java.util.List;
 final class Messages {
 
     interface Listener {
-        void onMessage(String text);
+        /** mail = it came in as an email (to the topic's email address), not a text. */
+        void onMessage(String text, boolean mail);
     }
 
     private static final String PREFS = "wheel";
     private static final String K_TOPIC = "ntfy_topic", K_LAST_ID = "ntfy_last_id",
-            K_TEXT = "msg_text", K_TIME = "msg_time", K_UNREAD = "msg_unread", K_DND = "dnd";
+            K_TEXT = "msg_text", K_TIME = "msg_time", K_UNREAD = "msg_unread", K_DND = "dnd",
+            K_MAIL_TEXT = "mail_text", K_MAIL_TIME = "mail_time", K_UNREAD_MAIL = "msg_unread_mail";
 
     /** How long the last message stays on the card. */
     static final long ON_CARD_MS = 2 * 60 * 60 * 1000L;
@@ -78,10 +80,33 @@ final class Messages {
         return now - t < ON_CARD_MS ? p.getString(K_TEXT, null) : null;
     }
 
-    /** The message you haven't seen yet, or null. */
+    /** The last email if it's recent enough for the card, else null. */
+    static String recentMail(Context c, long now) {
+        SharedPreferences p = sp(c);
+        long t = p.getLong(K_MAIL_TIME, 0);
+        return now - t < ON_CARD_MS ? p.getString(K_MAIL_TEXT, null) : null;
+    }
+
+    /** The newest of the two that's still on the card: {text, "mail" or "msg"}, or null. */
+    static String[] latest(Context c, long now) {
+        SharedPreferences p = sp(c);
+        String m = recent(c, now), e = recentMail(c, now);
+        if (m == null && e == null) return null;
+        if (e == null || (m != null && p.getLong(K_TIME, 0) >= p.getLong(K_MAIL_TIME, 0))) {
+            return new String[]{m, "msg"};
+        }
+        return new String[]{e, "mail"};
+    }
+
+    /** What you haven't seen yet, or null. */
     static String unread(Context c) {
         SharedPreferences p = sp(c);
-        return p.getBoolean(K_UNREAD, false) ? p.getString(K_TEXT, null) : null;
+        if (!p.getBoolean(K_UNREAD, false)) return null;
+        return p.getString(p.getBoolean(K_UNREAD_MAIL, false) ? K_MAIL_TEXT : K_TEXT, null);
+    }
+
+    static boolean unreadIsMail(Context c) {
+        return sp(c).getBoolean(K_UNREAD_MAIL, false);
     }
 
     static void markRead(Context c) {
@@ -151,22 +176,26 @@ final class Messages {
             while (running && (line = in.readLine()) != null) {
                 JSONObject o = new JSONObject(line);
                 if (!"message".equals(o.optString("event"))) continue;
-                String text = tidy(o.optString("message", ""));
+                String raw = o.optString("message", "");
+                // Emails arrive with line breaks (a body); texts from the phone don't.
+                final boolean mail = raw.indexOf('\n') >= 0;
+                String text = tidy(raw);
                 String title = o.optString("title", "").trim();
                 // ntfy fills in "triggered" when the phone sent an empty body.
                 if (text.equalsIgnoreCase("triggered")) text = "";
                 if (!title.isEmpty()) text = text.isEmpty() ? title : title + ": " + text;
                 final String clean = DotFont.clean(text);
                 p.edit().putString(K_LAST_ID, o.optString("id", since))
-                        .putString(K_TEXT, clean)
-                        .putLong(K_TIME, System.currentTimeMillis())
+                        .putString(mail ? K_MAIL_TEXT : K_TEXT, clean)
+                        .putLong(mail ? K_MAIL_TIME : K_TIME, System.currentTimeMillis())
                         .putBoolean(K_UNREAD, true)
+                        .putBoolean(K_UNREAD_MAIL, mail)
                         .apply();
                 if (clean.isEmpty()) continue;
                 ui.post(new Runnable() {
                     @Override
                     public void run() {
-                        for (Listener l : new ArrayList<>(listeners)) l.onMessage(clean);
+                        for (Listener l : new ArrayList<>(listeners)) l.onMessage(clean, mail);
                     }
                 });
             }

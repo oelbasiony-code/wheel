@@ -142,36 +142,58 @@ final class AmbientView extends View {
         invalidate();
     }
 
-    // A message on Wheel: the same small banner as over other apps (top right, 5 seconds,
-    // doesn't take the remote). Play/Pause opens it big in the middle; it stays open
-    // until you close it (Play/Pause, Back or any button).
-    private static final long BANNER_FOR_MS = 5 * 1000L;
+    // A message or email on Wheel: the envelope icon in the corner (10 seconds, doesn't
+    // take the remote except ☰, which opens it big in the middle). Opened, it stays until
+    // you close it (☰, Back or any button). Play/Pause opens the newest one any time.
+    private static final long ICON_FOR_MS = 10 * 1000L;
     private static final long MESSAGE_IN_MS = 400;
-    private final android.graphics.RectF bannerBox = new android.graphics.RectF();
-    private String banner;
-    private long bannerSince;      // uptime, like MessageOverlay
+    private String iconText;
+    private boolean iconMail;
+    private long iconSince;        // uptime, like MessageOverlay
     private String message;        // opened big
+    private boolean messageMail;
     private long messageSince;
 
-    void showMessage(String text) {
+    void showMessage(String text, boolean mail) {
         if (text == null || text.isEmpty()) return;
-        banner = text;
-        bannerSince = android.os.SystemClock.uptimeMillis();
+        iconText = text;
+        iconMail = mail;
+        iconSince = android.os.SystemClock.uptimeMillis();
         poke();          // wakes idle mode so you see it
         holdIdle = false;
-        Messages.markRead(getContext());   // seen; still on the card for a while
         invalidate();
     }
 
-    /** Opens the message big in the middle (it stays until closed). */
-    void openMessage(String text) {
+    boolean iconShowing() {
+        return iconText != null && message == null;
+    }
+
+    /** ☰ while the icon shows: open that message. */
+    void openIcon() {
+        if (iconText == null) return;
+        openMessage(iconText, iconMail);
+    }
+
+    /** Opens a message big in the middle (it stays until closed). */
+    void openMessage(String text, boolean mail) {
         if (text == null || text.isEmpty()) return;
-        banner = null;
+        iconText = null;
         message = text;
+        messageMail = mail;
         messageSince = System.currentTimeMillis();
+        Messages.markRead(getContext());
         poke();
         holdIdle = false;
         invalidate();
+    }
+
+    private void drawIcon(Canvas c) {
+        if (android.os.SystemClock.uptimeMillis() - iconSince > ICON_FOR_MS) {
+            iconText = null;
+            Messages.markRead(getContext());   // gone by itself; still on the card
+            return;
+        }
+        MessageOverlay.drawIcon(c, getWidth(), getHeight(), iconMail, true, iconSince, dot);
     }
 
     boolean messageShowing() {
@@ -181,15 +203,6 @@ final class AmbientView extends View {
     void dismissMessage() {
         message = null;
         invalidate();
-    }
-
-    private void drawBanner(Canvas c) {
-        if (android.os.SystemClock.uptimeMillis() - bannerSince > BANNER_FOR_MS) {
-            banner = null;
-            return;
-        }
-        MessageOverlay.drawBanner(c, getWidth(), getHeight(), banner,
-                bannerSince, dot, bannerBox);
     }
 
     private void drawMessage(Canvas c, long now) {
@@ -216,8 +229,8 @@ final class AmbientView extends View {
         c.drawRoundRect(new android.graphics.RectF(x, y, x + cardW, y + cardH), p * 2, p * 2, dot);
         drawCard(c, x, y, cardW, cardH, p * 0.7f, e);
         float ty = y + pad;
-        DotFont.draw(c, "MESSAGE", x + pad, ty, labelP, labelP * 0.36f, dot,
-                new int[]{WheelView.TICK_MSG}, e);
+        DotFont.draw(c, messageMail ? "MAIL" : "MESSAGE", x + pad, ty, labelP, labelP * 0.36f, dot,
+                new int[]{messageMail ? WheelView.TICK_MAIL : WheelView.TICK_MSG}, e);
         ty += 7 * labelP + p * 5;
         for (String line : lines) {
             DotFont.draw(c, line, x + pad, ty, p, p * 0.36f, dot, CLOCK, e);
@@ -455,7 +468,7 @@ final class AmbientView extends View {
         }
         if (t >= 0) drawTrain(c, now, t, trackY, tp, normal + idle * IDLE_BRIGHTNESS);
         if (message != null) drawMessage(c, now);
-        else if (banner != null) drawBanner(c);
+        else if (iconText != null) drawIcon(c);
         // The startup sequence / morning briefing goes over everything.
         if (Startup.showing()) {
             lastInput = up;   // no idle mode while it plays
