@@ -84,7 +84,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
 - `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, hold,
   fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first event, MSG = unread texts/emails from the last 12 h (read = popped up while the TV was on, or opened), labels WEATHER / MSG/MAIL / CAL ("1 MESSAGE, 1 MAIL" or NO NEW MAIL/MESSAGES) in the card's colors (no train); was: weather, first
-  event, next train, typed out). Any button skips. Try it: `--ez boot_demo true` (add
+  event, next train, typed out). The briefing stays until a button; any button skips. Try it: `--ez boot_demo true` (add
   `--ez briefing true`), or `--ez briefing_demo true`.
 
 ## Omar's setup (his Mac)

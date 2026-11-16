@@ -43,7 +43,7 @@ final class Startup {
     private static volatile long noAutoBootUntil;
     /** The briefing's top line when it isn't the panel's greeting (WELCOME HOME, OMAR). */
     private static volatile String briefTitle;
-    /** WELCOME HOME stays up until a button is pressed (Omar's call). */
+    /** The briefing (and WELCOME HOME) stays up until a button is pressed (Omar's call). */
     private static volatile boolean briefHold;
 
     /** The briefing's clock, frozen just before it would leave while it's held. */
@@ -115,7 +115,7 @@ final class Startup {
     static void play(boolean withBriefing) {
         bootPending = false;   // a demo replaces the automatic one
         briefTitle = null;
-        briefHold = false;
+        briefHold = true;      // every briefing stays until a button (Omar's call)
         bootAt = SystemClock.uptimeMillis();
         briefAt = withBriefing ? bootAt + BOOT_MS : -1;
         pts = null;
@@ -124,7 +124,7 @@ final class Startup {
     static void playBriefing() {
         bootPending = false;
         briefTitle = null;
-        briefHold = false;
+        briefHold = true;
         bootAt = -1;
         briefAt = SystemClock.uptimeMillis();
     }
