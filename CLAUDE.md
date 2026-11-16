@@ -49,8 +49,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
 - `MessageOverlay.java`: the envelope icon (top-right, 10 s, dot teal = text, orange = mail),
   like a phone's notification icon. Over apps HomeWatcher shows it and catches ☰ while it shows
   (accessibility key filtering, only ☰ and Back-while-open): ☰ opens the whole message in the
-  corner, ☰/Back closes it, closes itself after 30 s. Over Disney+ (the last app opened from
-  Wheel, MainActivity.lastApp) the icon also has a one-line preview. On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
+  corner, ☰/Back closes it, closes itself after 30 s. No preview text beside the icon (Omar: no clutter). On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
   the middle; ☰, Back or any button closes. Play/Pause opens the newest any time. Texts show on
   the card as MSG, emails as MAIL, for 5 minutes or until opened; then MSG says NO NEW MESSAGES and MAIL says NO NEW
   MAIL (both always on the card). Play/Pause still opens the newest for 2 hours. An email = anything with a body (phone texts send only a title).

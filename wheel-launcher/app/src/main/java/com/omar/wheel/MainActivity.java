@@ -258,9 +258,6 @@ public final class MainActivity extends Activity implements WheelView.Host {
         if (unread != null) ambient.showMessage(unread, Messages.unreadIsMail(this));   // the icon
     }
 
-    /** The last app opened from Wheel (HomeWatcher: preview messages over Disney+). */
-    static volatile String lastApp;
-
     /** True while Wheel is the app on screen (HomeWatcher then leaves messages to it). */
     static volatile boolean onScreen;
 
@@ -481,7 +478,6 @@ public final class MainActivity extends Activity implements WheelView.Host {
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         try {
             startActivity(i);
-            lastApp = e.pkg;
             Govee.tint(this, Govee.colorFor(e.pkg, e.label));   // lights in the app's color
         } catch (Exception ex) {
             toast("Can't open " + e.label);

@@ -226,8 +226,7 @@ public final class HomeWatcher extends AccessibilityService {
                         android.graphics.PixelFormat.TRANSLUCENT);
                 ((WindowManager) getSystemService(WINDOW_SERVICE)).addView(overlay, lp);
             }
-            String app = MainActivity.lastApp;
-            overlay.show(text, mail, app != null && app.startsWith("com.disney"));
+            overlay.show(text, mail, false);   // just the icon; ☰ opens it
             // Still unread: back on Wheel the icon shows again and ☰ opens it.
             h.removeCallbacks(iconTimeout);
             h.postDelayed(iconTimeout, BANNER_MS);

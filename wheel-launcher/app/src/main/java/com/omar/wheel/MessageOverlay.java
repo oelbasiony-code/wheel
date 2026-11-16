@@ -12,8 +12,7 @@ import android.view.View;
  * 10 seconds and goes away by itself; it stays on Wheel's card afterwards (MSG / MAIL).
  * On Wheel, ☰ opens it big in the middle (☰ again, Back or any button closes it).
  * Over other apps HomeWatcher catches ☰ while the icon shows and opens the whole message in
- * the corner (☰ or Back closes it). Over Disney+ the icon also gets a one-line preview, in
- * case ☰ doesn't come through there. HomeWatcher shows this view over apps; Wheel draws the
+ * the corner (☰ or Back closes it). No preview beside the icon (Omar's call: no clutter). HomeWatcher shows this view over apps; Wheel draws the
  * same icon with drawIcon().
  */
 final class MessageOverlay extends View {
