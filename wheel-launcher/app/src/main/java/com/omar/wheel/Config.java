@@ -37,6 +37,16 @@ final class Config {
     static final int PREVIEW_WEATHER = -1;
 
     /**
+     * Commuter rail on the rotating line: the next trains from your station.
+     * Andover, Haverhill Line, inbound (1) toward North Station. 0 = outbound.
+     */
+    static final boolean TRAIN = true;
+    static final String TRAIN_STOP = "place-WR-0228";
+    static final String TRAIN_ROUTE = "CR-Haverhill";
+    static final int TRAIN_DIRECTION = 1;
+    static final String TRAIN_TO = "BOSTON";
+
+    /**
      * Your wheel, top to bottom. Apps are matched on the Fire Stick by their
      * name first ("aliases": lowercase, letters and digits only, + becomes "plus"),
      * then by package name as a fallback.

@@ -39,6 +39,12 @@ final class AmbientView extends View {
     private float idle;          // 0 = normal, 1 = fully in idle mode
     private boolean waking;
 
+    // The rotating line: which message, and since when.
+    private static final long TICK_MS = 7000;
+    private static final long TICK_FADE_MS = 350;
+    private int tickIdx;
+    private long tickSince;
+
     private final Runnable frame = new Runnable() {
         @Override
         public void run() {
@@ -67,6 +73,52 @@ final class AmbientView extends View {
         } else {
             idle = 0;
             wheel.setCovered(false);
+        }
+    }
+
+    /** Left/right on the remote flips the rotating line. */
+    void stepTicker(int dir) {
+        tickIdx += dir;
+        tickSince = System.currentTimeMillis();
+        invalidate();
+    }
+
+    /** The message to show now and how visible it is (fades between messages). */
+    private WheelView.Tick currentTick(long now, float[] alphaOut) {
+        java.util.List<WheelView.Tick> items = wheel.tickerItems(now);
+        if (items.isEmpty()) return null;
+        if (tickSince == 0) tickSince = now;
+        int n = items.size();
+        if (n > 1 && now - tickSince >= TICK_MS) {
+            tickIdx++;
+            tickSince = now;
+        }
+        long t = now - tickSince;
+        float a = n == 1 ? 1f : Math.min(1f, t / (float) TICK_FADE_MS)
+                * Math.min(1f, Math.max(0f, (TICK_MS - t) / (float) TICK_FADE_MS));
+        alphaOut[0] = a;
+        alphaOut[1] = ((tickIdx % n) + n) % n;
+        alphaOut[2] = n;
+        return items.get((int) alphaOut[1]);
+    }
+
+    private final float[] tickInfo = new float[3];
+
+    /** Label in its color, then the message; small position dots when there are several. */
+    private void drawTick(Canvas c, WheelView.Tick k, float x, float top, float p, float width,
+                          float alpha, int index, int count, boolean dotsRight) {
+        int[] lc = {k.color};
+        float lw = DotFont.draw(c, k.label, x, top, p, p * 0.36f, dot, lc, alpha);
+        float dotsW = count > 1 ? count * p * 3f : 0;
+        int room = (int) ((width - lw - dotsW) / p) - 6;
+        String text = WheelView.fit(k.text, Math.max(4, room));
+        float tw = DotFont.draw(c, text, x + lw + p * 3, top, p, p * 0.36f, dot, DIM, alpha);
+        if (count > 1) {
+            float dx = dotsRight ? x + width - dotsW : x + lw + p * 3 + tw + p * 4;
+            for (int i = 0; i < count; i++) {
+                dot.setColor(Doodles.withAlpha(i == index ? 0xFFA9A398 : 0xFF3A3834, 1f));
+                c.drawCircle(dx + i * p * 3f + p, top + 3.5f * p, p * 0.5f, dot);
+            }
         }
     }
 
@@ -108,6 +160,11 @@ final class AmbientView extends View {
                     wheel.dateTop + wheel.datePitch * 3.5f, wheel.datePitch * 8f, now, normal);
             Doodles.drawWeather(c, dot, wheel.iconX, wheel.iconTop, wheel.iconPitch,
                     wheel.weatherCode(), wheel.weatherDay(), now, normal);
+            WheelView.Tick k = currentTick(now, tickInfo);
+            if (k != null) {
+                drawTick(c, k, wheel.tickX, wheel.tickTop, wheel.tickPitch, wheel.tickW,
+                        normal * tickInfo[0], (int) tickInfo[1], (int) tickInfo[2], true);
+            }
         }
         if (idle > 0.01f) {
             c.drawColor(Doodles.withAlpha(0xFF000000, idle));
@@ -138,9 +195,12 @@ final class AmbientView extends View {
         float clockW = DotFont.cols(time) * cp + cp * 1.5f + DotFont.cols(ap) * sp;
         float wxW = wx == null ? 0 : DotFont.cols(wx) * dp + dp * 3 + Doodles.ICON_COLS * iconP;
         float blockW = Math.max(clockW, Math.max(DotFont.cols(date) * dp, wxW));
+        WheelView.Tick tick = currentTick(now, tickInfo);
+        float calP = h / 170f;
+        float calH = tick == null ? 0 : h * 0.045f + 7 * calP;
         float dinoH = Doodles.DINO_ROWS * dinoP;
         float blockH = dinoH + h * 0.02f + 7 * cp + h * 0.04f + 7 * dp
-                + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP);
+                + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP) + calH;
 
         // Centered and still.
         float x = (w - blockW) / 2f;
@@ -168,6 +228,12 @@ final class AmbientView extends View {
             DotFont.draw(c, wx, x, ty, dp, dp * 0.36f, dot, DIM, alpha);
             Doodles.drawWeather(c, dot, x + DotFont.cols(wx) * dp + dp * 3, y, iconP,
                     wheel.weatherCode(), wheel.weatherDay(), now, alpha);
+            y += Doodles.ICON_ROWS * iconP;
+        }
+        if (tick != null) {
+            // The rotating line under the weather.
+            drawTick(c, tick, x, y + h * 0.045f, calP, Math.max(blockW, w * 0.4f),
+                    alpha * tickInfo[0], (int) tickInfo[1], (int) tickInfo[2], false);
         }
     }
 }

@@ -46,6 +46,12 @@ final class WheelView extends View {
     private String weatherNow, weatherRange;
     private int weatherCode = -1;
     private boolean weatherDay = true;
+    private List<Agenda.Event> agenda;
+    private Weather.Extra weatherExtra;
+    private List<Long> trains;
+
+    /** Where the rotating line goes (above the greeting); set when the panel is laid out. */
+    float tickX, tickTop, tickPitch, tickW;
 
     // Where the ambient layer draws (set each time the panel is laid out).
     float dinoLeft, dinoRight, dinoBottom, iconX, iconTop, iconPitch;
@@ -149,10 +155,13 @@ final class WheelView extends View {
         invalidate();
     }
 
-    void onLeftRight(int dir) {
-        if (state != MENU) return;
+    /** Left/right: picks in the menu. Returns false when it's free (then it flips the rotating line). */
+    boolean onLeftRight(int dir) {
+        if (state == MOVE) return true;
+        if (state != MENU) return false;
         menuChoice = Math.max(0, Math.min(2, menuChoice + dir));
         invalidate();
+        return true;
     }
 
     void onOk() {
@@ -449,7 +458,8 @@ final class WheelView extends View {
         Season.Theme theme = Season.today(nowMs);
         String greet = theme.greeting != null ? theme.greeting : part + ", " + Config.NAME;
 
-        float y = h * 0.27f;
+        float panelTop = h * 0.27f;
+        float y = panelTop;
         float gp = Math.min(h / 150f, pw / Math.max(1, DotFont.cols(greet)));
         DotFont.draw(c, greet, px, y, gp, gp * 0.36f, dot, DIM, 1f);
         y += 7 * gp + h * 0.04f;
@@ -498,7 +508,82 @@ final class WheelView extends View {
         iconTop = blockTop + ((y - blockTop) - Doodles.ICON_ROWS * icP) / 2f;
         dinoLeft = px;
         dinoRight = px + pw;
-        dinoBottom = h * 0.27f - h * 0.015f;
+        tickPitch = h / 250f;
+        tickX = px;
+        tickW = pw;
+        tickTop = panelTop - h * 0.024f - 7 * tickPitch;
+        dinoBottom = tickTop - h * 0.014f;
+    }
+
+    void setWeatherExtra(Weather.Extra x) {
+        if (x != null) weatherExtra = x;
+    }
+
+    void setTrains(List<Long> t) {
+        trains = t;
+    }
+
+    /** One message on the rotating line. */
+    static final class Tick {
+        final String label, text;
+        final int color;
+
+        Tick(String label, String text, int color) {
+            this.label = DotFont.clean(label);
+            this.text = DotFont.clean(text);
+            this.color = color;
+        }
+    }
+
+    static final int TICK_CAL = 0xFFEDE6DA, TICK_TRAIN = 0xFFC583BC, TICK_RAIN = 0xFF8FB8DE;
+
+    /** Everything the rotating line cycles through right now. */
+    List<Tick> tickerItems(long now) {
+        java.util.ArrayList<Tick> out = new java.util.ArrayList<>();
+        TimeZone tz = TimeZone.getDefault();
+        for (String[] l : Agenda.lines(agenda, now, tz, 3)) out.add(new Tick(l[0], l[1], TICK_CAL));
+
+        if (trains != null) {
+            StringBuilder b = new StringBuilder();
+            int n = 0;
+            for (long t : trains) {
+                if (t < now - 60000L || t > now + 3 * 3600000L) continue;
+                if (n == 2) break;
+                long mins = (t - now) / 60000L;
+                // The very next train in minutes when it's close, then clock times.
+                String when = n == 0 && mins < 60 ? (mins <= 0 ? "NOW" : "IN " + mins + " MIN")
+                        : Agenda.clock(t, tz);
+                b.append(n == 0 ? "" : "   ").append(when);
+                n++;
+            }
+            if (n > 0) out.add(new Tick("TRAIN", b.toString(), TICK_TRAIN));
+        }
+
+        Weather.Extra x = weatherExtra;
+        if (x != null) {
+            if (x.wetAt > 0 && x.wetAt > now - 3600000L) {
+                String when = x.wetAt <= now + 45 * 60000L ? "STARTING SOON" : "AROUND " + Agenda.clock(x.wetAt, tz);
+                out.add(new Tick(x.wetIsSnow ? "SNOW" : "RAIN", when, TICK_RAIN));
+            }
+        }
+        return out;
+    }
+
+    void setAgenda(List<Agenda.Event> a) {
+        agenda = a;
+        invalidate();
+    }
+
+    /** The calendar lines for right now: {label, title}. */
+    List<String[]> agendaLines(long now, int max) {
+        return Agenda.lines(agenda, now, TimeZone.getDefault(), max);
+    }
+
+    /** Trims a string (already cleaned) to fit in maxCols dot columns. */
+    static String fit(String s, int maxCols) {
+        if (DotFont.cols(s) <= maxCols) return s;
+        while (s.length() > 1 && DotFont.cols(s + "..") > maxCols) s = s.substring(0, s.length() - 1).trim();
+        return s + "..";
     }
 
     String weatherNow() {

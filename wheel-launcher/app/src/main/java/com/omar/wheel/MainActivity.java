@@ -38,6 +38,58 @@ public final class MainActivity extends Activity implements WheelView.Host {
         }
     };
 
+    private static final long AGENDA_MAX_AGE_MS = 10 * 60 * 1000L;
+    private boolean fetchingAgenda;
+    private long lastAgenda;
+
+    /** Your calendar: reloaded every 10 minutes while Wheel is on screen. */
+    private final Runnable agendaLoop = new Runnable() {
+        @Override
+        public void run() {
+            if (!fetchingAgenda && System.currentTimeMillis() - lastAgenda > AGENDA_MAX_AGE_MS) {
+                fetchingAgenda = true;
+                Agenda.fetch(MainActivity.this, h, new Agenda.Callback() {
+                    @Override
+                    public void onAgenda(java.util.List<Agenda.Event> events) {
+                        fetchingAgenda = false;
+                        if (events != null) {
+                            lastAgenda = System.currentTimeMillis();
+                            wheel.setAgenda(events);
+                        } else {
+                            lastAgenda = System.currentTimeMillis() - AGENDA_MAX_AGE_MS + 60 * 1000L;
+                        }
+                    }
+                });
+            }
+            h.postDelayed(this, 60 * 1000L);
+        }
+    };
+
+    private static final long TRAIN_EVERY_MS = 3 * 60 * 1000L;
+    private boolean fetchingTrains;
+    private long lastTrains;
+
+    /** Next trains: every 3 minutes while Wheel is on screen (live delays change fast). */
+    private final Runnable trainLoop = new Runnable() {
+        @Override
+        public void run() {
+            if (Config.TRAIN && !fetchingTrains && System.currentTimeMillis() - lastTrains > TRAIN_EVERY_MS) {
+                fetchingTrains = true;
+                Train.fetch(h, new Train.Callback() {
+                    @Override
+                    public void onTrains(java.util.List<Long> departures) {
+                        fetchingTrains = false;
+                        if (departures != null) {
+                            lastTrains = System.currentTimeMillis();
+                            wheel.setTrains(departures);
+                        }
+                    }
+                });
+            }
+            h.postDelayed(this, 60 * 1000L);
+        }
+    };
+
     private final Runnable weatherLoop = new Runnable() {
         @Override
         public void run() {
@@ -45,11 +97,13 @@ public final class MainActivity extends Activity implements WheelView.Host {
                 fetchingWeather = true;
                 Weather.fetch(h, new Weather.Callback() {
                     @Override
-                    public void onWeather(String now, String range, int code, boolean isDay) {
+                    public void onWeather(String now, String range, int code, boolean isDay,
+                                          Weather.Extra extra) {
                         fetchingWeather = false;
                         if (now != null) {
                             lastWeather = System.currentTimeMillis();
                             wheel.setWeather(now, range, code, isDay);
+                            wheel.setWeatherExtra(extra);
                         }
                     }
                 });
@@ -82,11 +136,17 @@ public final class MainActivity extends Activity implements WheelView.Host {
         reload();
         h.removeCallbacks(weatherLoop);
         h.post(weatherLoop);
+        h.removeCallbacks(agendaLoop);
+        h.post(agendaLoop);
+        h.removeCallbacks(trainLoop);
+        h.post(trainLoop);
     }
 
     @Override
     protected void onPause() {
         h.removeCallbacks(weatherLoop);
+        h.removeCallbacks(agendaLoop);
+        h.removeCallbacks(trainLoop);
         h.removeCallbacks(longPress);
         ambient.setActive(false);
         okDown = false;
@@ -162,10 +222,10 @@ public final class MainActivity extends Activity implements WheelView.Host {
                 if (down) wheel.onUpDown(1);
                 return true;
             case KeyEvent.KEYCODE_DPAD_LEFT:
-                if (down) wheel.onLeftRight(-1);
+                if (down && !wheel.onLeftRight(-1)) ambient.stepTicker(-1);
                 return true;
             case KeyEvent.KEYCODE_DPAD_RIGHT:
-                if (down) wheel.onLeftRight(1);
+                if (down && !wheel.onLeftRight(1)) ambient.stepTicker(1);
                 return true;
             case KeyEvent.KEYCODE_MENU:
                 if (act == KeyEvent.ACTION_UP) wheel.onMenu();

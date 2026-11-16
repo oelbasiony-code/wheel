@@ -14,14 +14,23 @@ final class Weather {
 
     interface Callback {
         /** now/range are null if the fetch failed. code = WMO weather code, isDay = sun is up. */
-        void onWeather(String now, String range, int code, boolean isDay);
+        void onWeather(String now, String range, int code, boolean isDay, Extra extra);
+    }
+
+    /** The extra bits for the rotating line. Times are epoch millis, 0 = none. */
+    static final class Extra {
+        long[] sunrises = new long[0], sunsets = new long[0];
+        /** First hour in the next 12 with a real chance of rain or snow (it's not falling now). */
+        long wetAt;
+        boolean wetIsSnow;
     }
 
     private static final String URL_FMT = "https://api.open-meteo.com/v1/forecast"
             + "?latitude=" + Config.LAT + "&longitude=" + Config.LON
             + "&current=temperature_2m,weather_code,is_day"
-            + "&daily=temperature_2m_max,temperature_2m_min"
-            + "&temperature_unit=fahrenheit&timezone=auto&forecast_days=1";
+            + "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset"
+            + "&hourly=precipitation_probability,weather_code"
+            + "&temperature_unit=fahrenheit&timezone=auto&timeformat=unixtime&forecast_days=2";
 
     static void fetch(final Handler ui, final Callback cb) {
         new Thread(new Runnable() {
@@ -30,6 +39,7 @@ final class Weather {
                 String now = null, range = null;
                 int code = -1;
                 boolean day = true;
+                Extra extra = null;
                 HttpURLConnection con = null;
                 try {
                     con = (HttpURLConnection) new URL(URL_FMT).openConnection();
@@ -50,6 +60,7 @@ final class Weather {
                     day = cur.optInt("is_day", 1) == 1;
                     now = t + "" + DotFont.DEG + " " + describe(code);
                     range = "H " + hi + DotFont.DEG + "   L " + lo + DotFont.DEG;
+                    extra = extra(o, code);
                 } catch (Exception ignored) {
                 } finally {
                     if (con != null) con.disconnect();
@@ -57,14 +68,53 @@ final class Weather {
                 final String n = now, r = range;
                 final int fc = code;
                 final boolean fd = day;
+                final Extra fx = extra;
                 ui.post(new Runnable() {
                     @Override
                     public void run() {
-                        cb.onWeather(n, r, fc, fd);
+                        cb.onWeather(n, r, fc, fd, fx);
                     }
                 });
             }
         }, "wheel-weather").start();
+    }
+
+    private static Extra extra(JSONObject o, int nowCode) {
+        Extra x = new Extra();
+        try {
+            JSONObject daily = o.getJSONObject("daily");
+            org.json.JSONArray sr = daily.getJSONArray("sunrise"), ss = daily.getJSONArray("sunset");
+            x.sunrises = new long[sr.length()];
+            x.sunsets = new long[ss.length()];
+            for (int i = 0; i < sr.length(); i++) x.sunrises[i] = sr.getLong(i) * 1000L;
+            for (int i = 0; i < ss.length(); i++) x.sunsets[i] = ss.getLong(i) * 1000L;
+        } catch (Exception ignored) {
+        }
+        try {
+            if (isWet(nowCode)) return x;   // already raining: the weather line says so
+            JSONObject hourly = o.getJSONObject("hourly");
+            org.json.JSONArray t = hourly.getJSONArray("time");
+            org.json.JSONArray pp = hourly.getJSONArray("precipitation_probability");
+            org.json.JSONArray wc = hourly.getJSONArray("weather_code");
+            long now = System.currentTimeMillis();
+            for (int i = 0; i < t.length(); i++) {
+                long ts = t.getLong(i) * 1000L;
+                if (ts + 3600000L <= now) continue;
+                if (ts > now + 12 * 3600000L) break;
+                int code = wc.optInt(i, 0);
+                if (pp.optInt(i, 0) >= 50 && isWet(code)) {
+                    x.wetAt = Math.max(ts, now);
+                    x.wetIsSnow = (code >= 71 && code <= 77) || code == 85 || code == 86;
+                    break;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return x;
+    }
+
+    static boolean isWet(int code) {
+        return (code >= 51 && code <= 67) || (code >= 71 && code <= 86) || code >= 95;
     }
 
     /** WMO weather codes to short words. */
