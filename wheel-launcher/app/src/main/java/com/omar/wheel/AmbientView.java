@@ -701,7 +701,7 @@ final class AmbientView extends View {
         TrainDoodle.draw(c, dot, getWidth(), bottom, pitch, t, label, alpha);
     }
 
-    /** A big clock on the left of the screen, with the dino walking on top. */
+    /** A big clock in the middle of the screen (lines left-aligned), with the dino walking on top. */
     private void drawIdle(Canvas c, long now, float alpha, Season.Theme theme) {
         float w = getWidth(), h = getHeight();
         TimeZone tz = TimeZone.getDefault();
@@ -724,10 +724,13 @@ final class AmbientView extends View {
         float blockH = dinoH + h * 0.02f + 7 * cp + h * 0.04f + 7 * dp
                 + (wx == null ? 0 : h * 0.035f + Doodles.ICON_ROWS * iconP);
 
-        // Calm: just the time, date and weather, lined up on one left edge and centered
-        // top to bottom (no news ticker or card here; Omar's call).
+        // Calm: just the time, date and weather (no news ticker or card here; Omar's call).
+        // The block sits in the middle of the screen; inside it the lines share a left edge.
         float y = (h - blockH) / 2f;
-        float left = w * 0.1f;
+        float clockW = DotFont.cols(time) * cp + cp * 1.5f + DotFont.cols(ap) * sp;
+        float dateLineW = DotFont.cols(date) * dp + dp * 11;   // + the month's icon
+        float wxW = wx == null ? 0 : DotFont.cols(wx) * dp + dp * 3 + Doodles.ICON_COLS * iconP;
+        float left = (w - Math.max(clockW, Math.max(dateLineW, wxW))) / 2f;
 
         // The clock line (digits + AM/PM); the dino walks above the digits only.
         float x = left;

@@ -148,10 +148,10 @@ the top.
 
 All of Omar's picks are built and on the TV: messages (texts via iPhone Shortcut with contact
 names; BU + personal Gmail forwarding to ntfy's email address), the envelope icon + MSG/MAIL
-cards, a calm sleep screen (dino, time, date, weather only, left-aligned; no news or card), Govee (cloud API key; app colors at 100%, home light candlelight 2200K by day / 2000K dimmer
+cards, a calm sleep screen (dino, time, date, weather only, centered block with left-aligned lines; no news or card), Govee (cloud API key; app colors at 100%, home light candlelight 2200K by day / 2000K dimmer
 9 pm-5 am, LIGHTS FOLLOW TV tile, TV on/off from the Roku's power-mode), the startup
 sequence, the daily briefing (first TV-on at 5 am or later), the calendar
-countdown on the card, WORD OF DAY, left-aligned idle mode, NYT on the card, phone commands
+countdown on the card, WORD OF DAY, centered idle mode (lines left-aligned), NYT on the card, phone commands
 (!home / !away / !wake / !ps5 / !xbox, all tested), the inbox (hold ☰), the train's smoke and
 whistle, no glimpse of the wheel when the TV turns on.
 
