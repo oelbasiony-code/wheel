@@ -166,6 +166,10 @@ public final class MainActivity extends Activity implements WheelView.Host {
     @Override
     protected void onNewIntent(android.content.Intent i) {
         super.onNewIntent(i);
+        // Home while Wheel is up (HomeWatcher sends it here): back to the plain wheel, so the
+        // inbox or an open message closes, the same as Back.
+        if (ambient.inboxShowing()) ambient.closeInbox();
+        if (ambient.messageShowing()) ambient.dismissMessage();
         checkDemo(i);
     }
 
