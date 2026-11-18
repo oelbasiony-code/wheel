@@ -81,9 +81,9 @@ final class Messages {
     }
 
     /** How long a text or email shows on the card before it says NO NEW MESSAGES / MAIL. */
-    static final long FRESH_MS = 5 * 60 * 1000L;
+    static final long FRESH_MS = 10 * 60 * 1000L;
 
-    /** The last text (or email) if it came in the last 5 minutes, else null. */
+    /** The last text (or email) if it came in the last 10 minutes, else null. */
     static String fresh(Context c, long now, boolean mail) {
         SharedPreferences p = sp(c);
         if (p.getBoolean(mail ? "mail_opened" : "msg_opened", false)) return null;   // read it
@@ -250,10 +250,12 @@ final class Messages {
         return text.isEmpty() ? who : who + ": " + text;
     }
 
-    // ---------------------------------------------------------------- the inbox (last 10)
+    // ---------------------------------------------------------------- the inbox
+    // Keeps up to 200 (so the briefing can count a whole day away); the inbox shows the newest
+    // 10 texts and the newest 10 emails.
 
     private static final String K_HISTORY = "msg_history";
-    private static final int HISTORY_MAX = 10;
+    private static final int HISTORY_MAX = 200;
     /** Inbox items older than this drop off by themselves. */
     private static final long HISTORY_DAYS_MS = 7 * 24 * 3600000L;
 
@@ -300,11 +302,21 @@ final class Messages {
         }
     }
 
-    /** CLEAR ALL in the inbox: forget every one, and the card says NO NEW ... */
-    static void clearHistory(Context c) {
-        sp(c).edit().putString(K_HISTORY, "[]")
-                .putBoolean("msg_opened", true).putBoolean("mail_opened", true)
-                .putBoolean(K_UNREAD, false).apply();
+    /** CLEAR ALL in the inbox: forget every text (or every email); the card says NO NEW ... */
+    static void clearHistory(Context c, boolean mail) {
+        SharedPreferences p = sp(c);
+        try {
+            org.json.JSONArray a = new org.json.JSONArray(p.getString(K_HISTORY, "[]"));
+            org.json.JSONArray out = new org.json.JSONArray();
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.getJSONObject(i);
+                if (o.optBoolean("m") != mail) out.put(o);
+            }
+            p.edit().putString(K_HISTORY, out.toString())
+                    .putBoolean(mail ? "mail_opened" : "msg_opened", true)
+                    .putBoolean(K_UNREAD, false).apply();
+        } catch (Exception ignored) {
+        }
     }
 
     /** Hold OK in the inbox: forget this one. */
@@ -328,12 +340,20 @@ final class Messages {
         }
     }
 
+    private static final String K_TV_OFF = "tv_off_at";
+
+    /** The TV just turned off: the next briefing tallies what came in from here on. */
+    static void tvOff(Context c) {
+        sp(c).edit().putLong(K_TV_OFF, System.currentTimeMillis()).apply();
+    }
+
     /**
      * For the briefing: {texts, emails} you haven't seen yet (came in while the TV was off, not
-     * opened since), from the last 12 hours.
+     * opened since), since the TV last turned off.
      */
     static int[] missed(Context c, long now) {
-        long since = now - 12 * 3600000L;
+        // Everything unseen since the TV last turned off (the inbox keeps up to 7 days).
+        long since = sp(c).getLong(K_TV_OFF, now - 12 * 3600000L);
         int texts = 0, mails = 0;
         for (Item it : history(c)) {
             if (it.time < since || it.read) continue;

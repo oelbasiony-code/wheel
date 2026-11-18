@@ -123,6 +123,7 @@ public final class HomeWatcher extends AccessibilityService {
                             } else {
                                 Govee.tvOff(c);
                                 Startup.tvOff();   // black until the boot, so no glimpse of the wheel
+                                Messages.tvOff(c);   // the briefing tallies from here
                                 tvOnAt = 0;
                             }
                         }

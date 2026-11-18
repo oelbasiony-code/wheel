@@ -196,12 +196,20 @@ final class AmbientView extends View {
 
     // ---------------------------------------------------------------- the inbox (hold ☰)
 
-    private java.util.List<Messages.Item> inbox;
+    private java.util.List<Messages.Item> inbox;      // the rows on the open tab
+    private java.util.List<Messages.Item> inboxAll;   // everything kept
+    private boolean inboxMail;                        // false = MESSAGES tab, true = MAIL tab
+    private static final int INBOX_ROWS = 10;
     private int inboxSel;
     private long inboxSince;
 
     void openInbox() {
-        inbox = Messages.history(getContext());
+        inboxAll = Messages.history(getContext());
+        // Start on MESSAGES, unless there are only emails.
+        boolean anyText = false;
+        for (Messages.Item it : inboxAll) if (!it.mail) { anyText = true; break; }
+        inboxMail = !anyText && !inboxAll.isEmpty();
+        loadTab();
         inboxSel = 0;
         inboxSince = System.currentTimeMillis();
         inboxSelAt = inboxSince;
@@ -223,6 +231,24 @@ final class AmbientView extends View {
 
     private long inboxSelAt;   // when the selection last moved (its text scrolls from then)
 
+    /** The open tab's newest 10. */
+    private void loadTab() {
+        inbox = new java.util.ArrayList<>();
+        for (Messages.Item it : inboxAll) {
+            if (it.mail == inboxMail && inbox.size() < INBOX_ROWS) inbox.add(it);
+        }
+    }
+
+    /** Left / right in the inbox: MESSAGES or MAIL. */
+    void inboxTab(boolean mail) {
+        if (inbox == null || inboxMail == mail) return;
+        inboxMail = mail;
+        loadTab();
+        inboxSel = 0;
+        inboxSelAt = System.currentTimeMillis();
+        invalidate();
+    }
+
     /** inboxSel == CLEAR_ALL: the CLEAR ALL button at the top is chosen. */
     private static final int CLEAR_ALL = -1;
 
@@ -237,7 +263,10 @@ final class AmbientView extends View {
     /** Hold OK in the inbox: delete the chosen one. */
     void inboxDeleteSelected() {
         if (inbox == null || inbox.isEmpty() || inboxSel == CLEAR_ALL) return;
-        Messages.deleteFromHistory(getContext(), inbox.remove(inboxSel));
+        Messages.Item gone = inbox.remove(inboxSel);
+        inboxAll.remove(gone);
+        Messages.deleteFromHistory(getContext(), gone);
+        loadTab();
         inboxSel = Math.max(0, Math.min(inboxSel, inbox.size() - 1));
         invalidate();
     }
@@ -246,7 +275,9 @@ final class AmbientView extends View {
     void inboxOpenSelected() {
         if (inbox == null || inbox.isEmpty()) return;
         if (inboxSel == CLEAR_ALL) {
-            Messages.clearHistory(getContext());
+            Messages.clearHistory(getContext(), inboxMail);
+            java.util.Iterator<Messages.Item> i = inboxAll.iterator();
+            while (i.hasNext()) if (i.next().mail == inboxMail) i.remove();
             inbox.clear();
             inboxSel = 0;
             invalidate();
@@ -277,7 +308,31 @@ final class AmbientView extends View {
         float panelW = w * 0.7f;
         float left = (w - panelW) / 2f;
         float top = h * 0.14f;
-        DotFont.draw(c, "INBOX", left, top, lp, lp * 0.36f, dot, CLOCK, e);
+        // Two tabs, MESSAGES and MAIL (left / right): the open one in its color, underlined.
+        float tx0 = left;
+        for (int t = 0; t < 2; t++) {
+            boolean tabMail = t == 1;
+            String name = tabMail ? "MAIL" : "MESSAGES";
+            int color = tabMail ? WheelView.TICK_MAIL : WheelView.TICK_MSG;
+            boolean open = tabMail == inboxMail;
+            int unread = 0;
+            for (Messages.Item it : inboxAll) if (it.mail == tabMail && !it.read) unread++;
+            float nw = DotFont.cols(name) * lp;
+            DotFont.draw(c, name, tx0, top, lp, lp * 0.36f, dot,
+                    new int[]{open ? color : 0xFF6E6A62}, e);
+            if (open) {
+                dot.setColor(Doodles.withAlpha(color, e));
+                for (float ux = tx0 + lp / 2f; ux < tx0 + nw; ux += lp) {
+                    c.drawCircle(ux, top + 7 * lp + lp * 1.6f, lp * 0.36f, dot);
+                }
+            }
+            if (unread > 0) {
+                // Not seen yet on this tab: a small dot after its name.
+                dot.setColor(Doodles.withAlpha(color, e));
+                c.drawCircle(tx0 + nw + lp * 2f, top + lp * 0.8f, lp * 0.7f, dot);
+            }
+            tx0 += nw + lp * 8;
+        }
         if (!inbox.isEmpty()) {
             // The CLEAR ALL button, top right; up from the first message chooses it.
             String ca = "CLEAR ALL";
@@ -295,12 +350,12 @@ final class AmbientView extends View {
         float y = top + 7 * lp + p * 8;
 
         if (inbox.isEmpty()) {
-            DotFont.draw(c, "NOTHING YET", left, y, p, p * 0.36f, dot, DIM, e);
+            DotFont.draw(c, inboxMail ? "NO MAIL" : "NO MESSAGES", left, y, p, p * 0.36f, dot, DIM, e);
             return;
         }
         int visible = (int) ((h * 0.92f - y) / rowH);
         int first = Math.max(0, Math.min(Math.max(0, inboxSel) - visible / 2, inbox.size() - visible));
-        float labelW = DotFont.cols("MAIL") * lp + p * 5;
+        float labelW = 0;   // the tab says what kind they are
         float timeW = DotFont.cols("59 MIN") * lp + p * 4;
         int maxCols = (int) ((panelW - labelW - timeW - p * 6) / p);
         for (int i = first; i < Math.min(inbox.size(), first + visible); i++) {
@@ -321,8 +376,6 @@ final class AmbientView extends View {
                 dot.setColor(Doodles.withAlpha(it.mail ? WheelView.TICK_MAIL : WheelView.TICK_MSG, e));
                 c.drawCircle(left - p * 2, y + 3.5f * p, p * 0.6f, dot);
             }
-            DotFont.draw(c, it.mail ? "MAIL" : "MSG", left, ly, lp, lp * 0.36f, dot,
-                    new int[]{it.mail ? WheelView.TICK_MAIL : WheelView.TICK_MSG}, a);
             float tx = left + labelW, room = maxCols * p;
             float over = DotFont.cols(it.text) * p - room;
             if (sel && over > 0) {

@@ -51,7 +51,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   (accessibility key filtering, only ☰ and Back-while-open): ☰ opens the whole message in the
   corner, ☰/Back closes it, closes itself after 30 s. No preview text beside the icon (Omar: no clutter). On Wheel, AmbientView draws the same icon (no ☰ hint): ☰ opens it big in
   the middle; ☰, Back or any button closes. Play/Pause opens the newest any time. Texts show on
-  the card as MSG, emails as MAIL, for 5 minutes or until opened; then MSG says NO NEW MESSAGES and MAIL says NO NEW
+  the card as MSG, emails as MAIL, for 10 minutes or until opened; then MSG says NO NEW MESSAGES and MAIL says NO NEW
   MAIL (both always on the card). Play/Pause still opens the newest for 2 hours. An email = anything with a body (phone texts send only a title).
   Do Not Disturb (tile in the all-apps list): no icon over shows; it shows when you're back on Wheel.
   An empty body arrives from ntfy as "triggered"; Wheel then shows just the title. The same text twice within 30 s shows once (two phone automations: chosen senders + "contains a space").
@@ -63,7 +63,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   briefing even if already shown, GOOD ___ by the time), !ps5 / !xbox (TV on, input, strip color). Try one:
   `--es command home`. The same command twice within 30 s runs once (the phone sometimes doubles). Each is a one-action iPhone Shortcut/automation (Get Contents of URL, POST,
   body = the command).
-- Inbox: hold ☰ on Wheel: last 10 texts/emails from the past 7 days (Messages.history), up/down, OK opens, hold OK deletes, CLEAR ALL (top right; up from the first message, OK) empties it, Back closes; unread items have a colored dot; the chosen row scrolls sideways
+- Inbox: hold ☰ on Wheel: two tabs, MESSAGES and MAIL (left/right; a dot after a tab's name = unread there), each the newest 10 from the past 7 days (Messages.history keeps up to 200 so the briefing can count a whole day), up/down, OK opens, hold OK deletes, CLEAR ALL (top right; up from the first message, OK) empties that tab, Back closes; unread items have a colored dot; the chosen row scrolls sideways
   when it's too long; opened messages shrink to fit all of it. No on-screen hints (Omar's call).
   Try it: `--ez inbox_demo true`.
 - `Train.java`: MBTA v3 API (no key), Andover `place-WR-0228`, `CR-Haverhill`, direction 1 = to Boston.
@@ -89,7 +89,7 @@ Key files (`wheel-launcher/app/src/main/java/com/omar/wheel/`):
   HBO violet, Apple TV cool white). The strip runs green-heavy: yellow = FF9A00, orange = FF3C00. Cloud allows ~10 commands/min: only changes are sent, stale requests dropped, back on Wheel it goes to the home light: candlelight 2200K at 60%, candlelight 2000K at 35% from 9 pm to 5 am (Config.HOME_LIGHT_*, NIGHT_*); it shifts by itself at 9 pm while you sit on Wheel.
   Needs "LAN Control" on in the Govee Home app (as of Nov 16 the scan got no reply).
 - `Startup.java`: boot sequence when the TV comes on (dots fly into WELCOME BACK, OMAR, hold,
-  fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first event, MSG = unread texts/emails from the last 12 h (read = popped up while the TV was on, or opened), labels WEATHER / MSG/MAIL / CAL ("1 MESSAGE, 1 MAIL" or NO NEW MAIL/MESSAGES) in the card's colors (no train); was: weather, first
+  fly back out the way they came, black fades to the wheel; no news line, Omar's call) and the daily briefing (first TV-on at 5 am or later, once a day; greeting matches the panel: weather, first event, MSG = unread texts/emails since the TV last turned off, or the last 12 h if that's unknown (Messages.tvOff; read = popped up while the TV was on, or opened), labels WEATHER / MSG/MAIL / CAL ("1 MESSAGE, 1 MAIL" or NO NEW MAIL/MESSAGES) in the card's colors (no train); was: weather, first
   event, next train, typed out). The briefing stays until a button; any button skips. Try it: `--ez boot_demo true` (add
   `--ez briefing true`), or `--ez briefing_demo true`.
 

@@ -340,11 +340,13 @@ public final class MainActivity extends Activity implements WheelView.Host {
             }
             return true;
         }
-        // The inbox: up/down choose, OK opens, Back or ☰ closes.
+        // The inbox: left/right MESSAGES or MAIL, up/down choose, OK opens, Back or ☰ closes.
         if (ambient.inboxShowing()) {
             int k = e.getKeyCode();
             if (down && k == KeyEvent.KEYCODE_DPAD_UP) ambient.inboxMove(-1);
             else if (down && k == KeyEvent.KEYCODE_DPAD_DOWN) ambient.inboxMove(1);
+            else if (down && k == KeyEvent.KEYCODE_DPAD_LEFT) ambient.inboxTab(false);
+            else if (down && k == KeyEvent.KEYCODE_DPAD_RIGHT) ambient.inboxTab(true);
             else if (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER
                     || k == KeyEvent.KEYCODE_BUTTON_A) {
                 // Press: open. Hold: delete.
