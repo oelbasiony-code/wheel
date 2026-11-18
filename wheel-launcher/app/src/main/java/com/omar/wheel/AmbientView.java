@@ -238,9 +238,25 @@ final class AmbientView extends View {
         }
     }
 
-    /** Left / right in the inbox: MESSAGES or MAIL. */
+    /** Left / right in the inbox: MESSAGES, MAIL, then (right from MAIL) CLEAR ALL. */
     void inboxTab(boolean mail) {
-        if (inbox == null || inboxMail == mail) return;
+        if (inbox == null) return;
+        if (inboxMail && mail) {
+            // Right from MAIL: CLEAR ALL.
+            if (!inbox.isEmpty() && inboxSel != CLEAR_ALL) {
+                inboxSel = CLEAR_ALL;
+                invalidate();
+            }
+            return;
+        }
+        if (inboxSel == CLEAR_ALL && !mail) {
+            // Left from CLEAR ALL: back to the list.
+            inboxSel = 0;
+            inboxSelAt = System.currentTimeMillis();
+            invalidate();
+            return;
+        }
+        if (inboxMail == mail) return;
         inboxMail = mail;
         loadTab();
         inboxSel = 0;
