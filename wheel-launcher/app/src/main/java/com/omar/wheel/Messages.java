@@ -251,8 +251,8 @@ final class Messages {
     }
 
     // ---------------------------------------------------------------- the inbox
-    // Keeps up to 200 (so the briefing can count a whole day away); the inbox shows the newest
-    // 10 texts and the newest 10 emails.
+    // Keeps up to 200 from the past 7 days; the inbox shows all of them (texts and emails on
+    // their own tabs), and the briefing counts from them.
 
     private static final String K_HISTORY = "msg_history";
     private static final int HISTORY_MAX = 200;

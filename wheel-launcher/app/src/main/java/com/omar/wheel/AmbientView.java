@@ -199,7 +199,6 @@ final class AmbientView extends View {
     private java.util.List<Messages.Item> inbox;      // the rows on the open tab
     private java.util.List<Messages.Item> inboxAll;   // everything kept
     private boolean inboxMail;                        // false = MESSAGES tab, true = MAIL tab
-    private static final int INBOX_ROWS = 10;
     private int inboxSel;
     private long inboxSince;
 
@@ -231,11 +230,11 @@ final class AmbientView extends View {
 
     private long inboxSelAt;   // when the selection last moved (its text scrolls from then)
 
-    /** The open tab's newest 10. */
+    /** Everything kept on the open tab (the list scrolls). */
     private void loadTab() {
         inbox = new java.util.ArrayList<>();
         for (Messages.Item it : inboxAll) {
-            if (it.mail == inboxMail && inbox.size() < INBOX_ROWS) inbox.add(it);
+            if (it.mail == inboxMail) inbox.add(it);
         }
     }
 
