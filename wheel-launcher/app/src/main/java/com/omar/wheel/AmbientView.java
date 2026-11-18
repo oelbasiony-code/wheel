@@ -209,7 +209,8 @@ final class AmbientView extends View {
         for (Messages.Item it : inboxAll) if (!it.mail) { anyText = true; break; }
         inboxMail = !anyText && !inboxAll.isEmpty();
         loadTab();
-        inboxSel = 0;
+        inboxSel = inbox.isEmpty() ? TOP : 0;
+        topPos = inboxMail ? 1 : 0;
         inboxSince = System.currentTimeMillis();
         inboxSelAt = inboxSince;
         iconText = null;
@@ -238,66 +239,79 @@ final class AmbientView extends View {
         }
     }
 
-    /** Left / right in the inbox: MESSAGES, MAIL, then (right from MAIL) CLEAR ALL. */
-    void inboxTab(boolean mail) {
-        if (inbox == null) return;
-        if (inboxMail && mail) {
-            // Right from MAIL: CLEAR ALL.
-            if (!inbox.isEmpty() && inboxSel != CLEAR_ALL) {
-                inboxSel = CLEAR_ALL;
-                invalidate();
-            }
-            return;
+    /*
+     * The inbox has a top row (MESSAGES, MAIL, CLEAR ALL) above the list.
+     * In the list: up/down move; up from the first one reaches the top row on the open tab.
+     * On the top row: left/right move between MESSAGES, MAIL and CLEAR ALL (landing on a tab
+     * opens it); down (or OK) from a tab goes into its list. From CLEAR ALL only left works.
+     */
+    private static final int TOP = -1;        // inboxSel == TOP: the top row is chosen
+    private int topPos;                       // 0 = MESSAGES, 1 = MAIL, 2 = CLEAR ALL
+
+    /** Left (false) / right (true) in the inbox: only does something on the top row. */
+    void inboxTab(boolean right) {
+        if (inbox == null || inboxSel != TOP) return;
+        int max = inboxAll.isEmpty() ? 1 : 2;   // nothing to clear: no CLEAR ALL
+        int to = Math.max(0, Math.min(max, topPos + (right ? 1 : -1)));
+        if (to == topPos) return;
+        topPos = to;
+        if (topPos < 2 && inboxMail != (topPos == 1)) {
+            inboxMail = topPos == 1;
+            loadTab();
         }
-        if (inboxSel == CLEAR_ALL && !mail) {
-            // Left from CLEAR ALL: back to the list.
-            inboxSel = 0;
-            inboxSelAt = System.currentTimeMillis();
-            invalidate();
-            return;
-        }
-        if (inboxMail == mail) return;
-        inboxMail = mail;
-        loadTab();
-        inboxSel = 0;
-        inboxSelAt = System.currentTimeMillis();
         invalidate();
     }
 
-    /** inboxSel == CLEAR_ALL: the CLEAR ALL button at the top is chosen. */
-    private static final int CLEAR_ALL = -1;
-
     void inboxMove(int dir) {
-        if (inbox == null || inbox.isEmpty()) return;
-        // Up from the first message reaches CLEAR ALL.
-        inboxSel = Math.max(CLEAR_ALL, Math.min(inbox.size() - 1, inboxSel + dir));
+        if (inbox == null) return;
+        if (inboxSel == TOP) {
+            // Down from a tab into its list (not from CLEAR ALL).
+            if (dir > 0 && topPos < 2 && !inbox.isEmpty()) inboxSel = 0;
+        } else if (dir < 0 && inboxSel == 0) {
+            inboxSel = TOP;
+            topPos = inboxMail ? 1 : 0;
+        } else {
+            inboxSel = Math.max(0, Math.min(inbox.size() - 1, inboxSel + dir));
+        }
         inboxSelAt = System.currentTimeMillis();
         invalidate();
     }
 
     /** Hold OK in the inbox: delete the chosen one. */
     void inboxDeleteSelected() {
-        if (inbox == null || inbox.isEmpty() || inboxSel == CLEAR_ALL) return;
+        if (inbox == null || inbox.isEmpty() || inboxSel == TOP) return;
         Messages.Item gone = inbox.remove(inboxSel);
         inboxAll.remove(gone);
         Messages.deleteFromHistory(getContext(), gone);
         loadTab();
-        inboxSel = Math.max(0, Math.min(inboxSel, inbox.size() - 1));
+        if (inbox.isEmpty()) {
+            inboxSel = TOP;
+            topPos = inboxMail ? 1 : 0;
+        } else {
+            inboxSel = Math.max(0, Math.min(inboxSel, inbox.size() - 1));
+        }
         invalidate();
     }
 
     /** OK in the inbox: open the chosen one big (Back from there closes it). */
     void inboxOpenSelected() {
-        if (inbox == null || inbox.isEmpty()) return;
-        if (inboxSel == CLEAR_ALL) {
-            Messages.clearHistory(getContext(), inboxMail);
-            java.util.Iterator<Messages.Item> i = inboxAll.iterator();
-            while (i.hasNext()) if (i.next().mail == inboxMail) i.remove();
-            inbox.clear();
-            inboxSel = 0;
+        if (inbox == null) return;
+        if (inboxSel == TOP) {
+            if (topPos == 2) {
+                // CLEAR ALL: every text and every email.
+                Messages.clearHistory(getContext(), false);
+                Messages.clearHistory(getContext(), true);
+                inboxAll.clear();
+                inbox.clear();
+                topPos = inboxMail ? 1 : 0;
+            } else if (!inbox.isEmpty()) {
+                inboxSel = 0;   // OK on a tab: into its list
+                inboxSelAt = System.currentTimeMillis();
+            }
             invalidate();
             return;
         }
+        if (inbox.isEmpty()) return;
         Messages.Item it = inbox.get(inboxSel);
         inbox = null;
         openMessage(it.text, it.mail);
@@ -323,7 +337,7 @@ final class AmbientView extends View {
         float panelW = w * 0.7f;
         float left = (w - panelW) / 2f;
         float top = h * 0.14f;
-        // Two tabs, MESSAGES and MAIL (left / right): the open one in its color, underlined.
+        // Two tabs, MESSAGES and MAIL: the open one in its color, underlined.
         float tx0 = left;
         for (int t = 0; t < 2; t++) {
             boolean tabMail = t == 1;
@@ -333,6 +347,12 @@ final class AmbientView extends View {
             int unread = 0;
             for (Messages.Item it : inboxAll) if (it.mail == tabMail && !it.read) unread++;
             float nw = DotFont.cols(name) * lp;
+            if (inboxSel == TOP && topPos == t) {
+                // Chosen on the top row: the same soft box as CLEAR ALL.
+                dot.setColor(Doodles.withAlpha(0xFF15171A, e));
+                c.drawRoundRect(new android.graphics.RectF(tx0 - p * 3, top - p * 2.5f, tx0 + nw + p * 3,
+                        top + 7 * lp + p * 2.5f), p * 2, p * 2, dot);
+            }
             DotFont.draw(c, name, tx0, top, lp, lp * 0.36f, dot,
                     new int[]{open ? color : 0xFF6E6A62}, e);
             if (open) {
@@ -348,12 +368,12 @@ final class AmbientView extends View {
             }
             tx0 += nw + lp * 8;
         }
-        if (!inbox.isEmpty()) {
-            // The CLEAR ALL button, top right; up from the first message chooses it.
+        if (!inboxAll.isEmpty()) {
+            // The CLEAR ALL button, top right (right from MAIL on the top row): empties both tabs.
             String ca = "CLEAR ALL";
             float cw = DotFont.cols(ca) * lp;
             float cx = left + panelW - cw;
-            boolean on = inboxSel == CLEAR_ALL;
+            boolean on = inboxSel == TOP && topPos == 2;
             if (on) {
                 dot.setColor(Doodles.withAlpha(0xFF15171A, e));
                 c.drawRoundRect(new android.graphics.RectF(cx - p * 3, top - p * 2.5f, cx + cw + p * 3,
